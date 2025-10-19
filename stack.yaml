@@ -1,0 +1,12 @@
+resolver: lts-24.16
+
+compiler: ghc-9.10.3
+
+packages:
+- .
+
+extra-deps:
+- hedgehog-1.4@sha256:9860ab34ab3951d9515c71b777d8c9c47610aae7339933e17d26ad9a4afa5618,4754
+- hw-hspec-hedgehog-0.1.1.1@sha256:10cb9cee967ec3dc85ddf74090013ffc2d504f1d91056efc2027ad534f5b8d3b,3303
+
+flags: {}

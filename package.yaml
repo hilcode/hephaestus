@@ -1,0 +1,64 @@
+name:                hephaestus
+version:             0.0.0.1
+github:              hilcode/hephaestus
+homepage:            https://github.com/hilcode/hephaestus#readme
+copyright:           2025 Hilbrand C. Wijbenga
+license:             GPL-3
+author:              Hilbrand C. Wijbenga
+maintainer:          Hilbrand C. Wijbenga
+category:            Utility
+
+extra-source-files:
+- README.md
+
+language: GHC2024
+default-extensions:
+- FunctionalDependencies
+- MultiWayIf
+- OverloadedStrings
+- Strict
+
+ghc-options:
+- -Werror
+- -Wall
+- -Wcompat
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wredundant-constraints
+- -Wtabs
+- -Wno-name-shadowing
+
+dependencies:
+- base >= 4.7 && < 5
+- containers
+- hedgehog
+- hspec
+- hw-hspec-hedgehog
+- text
+- text-show
+- vector
+
+executables:
+  hephaestus:
+    source-dirs:
+      - src/main/haskell
+    main: Main.hs
+    dependencies:
+      - hephaestus
+
+library:
+  source-dirs:
+    - src/main/haskell
+  exposed-modules:
+    - Hilcode.Misc
+
+tests:
+  test:
+    source-dirs:
+      - src/test/haskell
+    main: Spec.hs
+    dependencies:
+      - base
+      - hephaestus
+    other-modules:
+      - Hilcode.MiscSpec

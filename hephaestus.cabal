@@ -1,0 +1,97 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.38.1.
+--
+-- see: https://github.com/sol/hpack
+
+name:           hephaestus
+version:        0.0.0.1
+category:       Utility
+homepage:       https://github.com/hilcode/hephaestus#readme
+bug-reports:    https://github.com/hilcode/hephaestus/issues
+author:         Hilbrand C. Wijbenga
+maintainer:     Hilbrand C. Wijbenga
+copyright:      2025 Hilbrand C. Wijbenga
+license:        GPL-3
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/hilcode/hephaestus
+
+library
+  exposed-modules:
+      Hilcode.Misc
+  other-modules:
+      Main
+      Paths_hephaestus
+  hs-source-dirs:
+      src/main/haskell
+  default-extensions:
+      FunctionalDependencies
+      MultiWayIf
+      OverloadedStrings
+      Strict
+  ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , hedgehog
+    , hspec
+    , hw-hspec-hedgehog
+    , text
+    , text-show
+    , vector
+  default-language: GHC2024
+
+executable hephaestus
+  main-is: Main.hs
+  other-modules:
+      Hilcode.Misc
+      Paths_hephaestus
+  hs-source-dirs:
+      src/main/haskell
+  default-extensions:
+      FunctionalDependencies
+      MultiWayIf
+      OverloadedStrings
+      Strict
+  ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , hedgehog
+    , hephaestus
+    , hspec
+    , hw-hspec-hedgehog
+    , text
+    , text-show
+    , vector
+  default-language: GHC2024
+
+test-suite test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      Hilcode.MiscSpec
+  hs-source-dirs:
+      src/test/haskell
+  default-extensions:
+      FunctionalDependencies
+      MultiWayIf
+      OverloadedStrings
+      Strict
+  ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
+  build-depends:
+      base
+    , containers
+    , hedgehog
+    , hephaestus
+    , hspec
+    , hw-hspec-hedgehog
+    , text
+    , text-show
+    , vector
+  default-language: GHC2024
