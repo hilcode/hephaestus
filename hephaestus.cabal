@@ -25,6 +25,8 @@ library
   exposed-modules:
       Hilcode.Misc
   other-modules:
+      Hilcode.Glob
+      Hilcode.Result
       Main
       Paths_hephaestus
   hs-source-dirs:
@@ -37,10 +39,14 @@ library
   ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
   build-depends:
       base >=4.7 && <5
+    , bytestring
     , containers
+    , directory
+    , filepath
     , hedgehog
     , hspec
     , hw-hspec-hedgehog
+    , os-string
     , text
     , text-show
     , vector
@@ -49,7 +55,9 @@ library
 executable hephaestus
   main-is: Main.hs
   other-modules:
+      Hilcode.Glob
       Hilcode.Misc
+      Hilcode.Result
       Paths_hephaestus
   hs-source-dirs:
       src/main/haskell
@@ -61,11 +69,15 @@ executable hephaestus
   ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
   build-depends:
       base >=4.7 && <5
+    , bytestring
     , containers
+    , directory
+    , filepath
     , hedgehog
     , hephaestus
     , hspec
     , hw-hspec-hedgehog
+    , os-string
     , text
     , text-show
     , vector
@@ -86,11 +98,15 @@ test-suite test
   ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
   build-depends:
       base
+    , bytestring
     , containers
+    , directory
+    , filepath
     , hedgehog
     , hephaestus
     , hspec
     , hw-hspec-hedgehog
+    , os-string
     , text
     , text-show
     , vector

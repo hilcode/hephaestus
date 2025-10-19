@@ -1,6 +1,6 @@
-import Test.Hspec
+import Test.Hspec (Spec, describe, hspec)
 
-import qualified Hilcode.MiscSpec
+import Hilcode.MiscSpec qualified
 
 main :: IO ()
 main = hspec spec
