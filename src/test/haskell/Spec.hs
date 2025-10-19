@@ -1,6 +1,8 @@
-import Test.Hspec
+import Test.Hspec (Spec, describe, hspec)
 
-import qualified Hilcode.MiscSpec
+import Hilcode.MiscSpec qualified
+import Hilcode.ParserSpec qualified
+import Prelude (IO)
 
 main :: IO ()
 main = hspec spec
@@ -8,3 +10,4 @@ main = hspec spec
 spec :: Spec
 spec = do
     describe "Misc" Hilcode.MiscSpec.spec
+    describe "Parser" Hilcode.ParserSpec.spec

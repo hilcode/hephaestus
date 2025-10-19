@@ -23,7 +23,14 @@ source-repository head
 
 library
   exposed-modules:
+      Hilcode.Clock
+      Hilcode.FileSystem
+      Hilcode.Glob
+      Hilcode.Logger
       Hilcode.Misc
+      Hilcode.Parser
+      Hilcode.Prelude
+      Hilcode.Result
   other-modules:
       Main
       Paths_hephaestus
@@ -32,42 +39,63 @@ library
   default-extensions:
       FunctionalDependencies
       MultiWayIf
+      NoImplicitPrelude
+      OverloadedRecordDot
       OverloadedStrings
       Strict
   ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
   build-depends:
       base >=4.7 && <5
+    , bytestring
     , containers
+    , directory
+    , filepath
     , hedgehog
     , hspec
-    , hw-hspec-hedgehog
+    , hspec-hedgehog
+    , os-string
     , text
     , text-show
+    , time
     , vector
   default-language: GHC2024
 
 executable hephaestus
   main-is: Main.hs
   other-modules:
+      Hilcode.Clock
+      Hilcode.FileSystem
+      Hilcode.Glob
+      Hilcode.Logger
       Hilcode.Misc
+      Hilcode.Parser
+      Hilcode.Prelude
+      Hilcode.Result
       Paths_hephaestus
   hs-source-dirs:
       src/main/haskell
   default-extensions:
       FunctionalDependencies
       MultiWayIf
+      NoImplicitPrelude
+      OverloadedRecordDot
       OverloadedStrings
       Strict
   ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
   build-depends:
       base >=4.7 && <5
+    , bytestring
     , containers
+    , directory
+    , filepath
     , hedgehog
     , hephaestus
     , hspec
-    , hw-hspec-hedgehog
+    , hspec-hedgehog
+    , os-string
     , text
     , text-show
+    , time
     , vector
   default-language: GHC2024
 
@@ -75,23 +103,32 @@ test-suite test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Hilcode.Checks
       Hilcode.MiscSpec
+      Hilcode.ParserSpec
   hs-source-dirs:
       src/test/haskell
   default-extensions:
       FunctionalDependencies
       MultiWayIf
+      NoImplicitPrelude
+      OverloadedRecordDot
       OverloadedStrings
       Strict
   ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
   build-depends:
       base
+    , bytestring
     , containers
+    , directory
+    , filepath
     , hedgehog
     , hephaestus
     , hspec
-    , hw-hspec-hedgehog
+    , hspec-hedgehog
+    , os-string
     , text
     , text-show
+    , time
     , vector
   default-language: GHC2024

@@ -24,3 +24,4 @@ cabal.project.local~
 cabal.sandbox.config
 dist
 dist-*
+src/main/haskell/Main

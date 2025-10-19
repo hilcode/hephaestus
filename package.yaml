@@ -15,6 +15,8 @@ language: GHC2024
 default-extensions:
 - FunctionalDependencies
 - MultiWayIf
+- NoImplicitPrelude
+- OverloadedRecordDot
 - OverloadedStrings
 - Strict
 
@@ -30,12 +32,17 @@ ghc-options:
 
 dependencies:
 - base >= 4.7 && < 5
+- bytestring
 - containers
+- directory
+- filepath
 - hedgehog
 - hspec
-- hw-hspec-hedgehog
+- hspec-hedgehog
+- os-string
 - text
 - text-show
+- time
 - vector
 
 executables:
@@ -50,7 +57,14 @@ library:
   source-dirs:
     - src/main/haskell
   exposed-modules:
+    - Hilcode.Clock
+    - Hilcode.FileSystem
+    - Hilcode.Glob
+    - Hilcode.Logger
     - Hilcode.Misc
+    - Hilcode.Parser
+    - Hilcode.Prelude
+    - Hilcode.Result
 
 tests:
   test:
@@ -61,4 +75,6 @@ tests:
       - base
       - hephaestus
     other-modules:
+      - Hilcode.Checks
       - Hilcode.MiscSpec
+      - Hilcode.ParserSpec
