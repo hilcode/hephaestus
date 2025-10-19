@@ -5,7 +5,7 @@ module Hilcode.Glob (
 import Data.List (unsnoc)
 import Hilcode.Result (
     Result,
-    fail,
+    err,
     fromEither,
     mapError,
     ok,
@@ -27,7 +27,6 @@ import System.OsPath (
     unsafeEncodeUtf,
     unsafeFromChar,
  )
-import Prelude hiding (fail)
 
 data GlobPart
     = AnyChars
@@ -72,10 +71,10 @@ fromOsString :: OsString -> Result GlobError Glob
 fromOsString osString =
     if isAbsolute osString
         then
-            fail AbsoluteGlob
+            err AbsoluteGlob
         else case unsnoc $ splitPath osString of
             Nothing ->
-                fail EmptyGlob
+                err EmptyGlob
             Just (dirs, file) ->
                 let
                     fixedDirs :: [OsPath]

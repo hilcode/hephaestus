@@ -15,6 +15,7 @@ language: GHC2024
 default-extensions:
 - FunctionalDependencies
 - MultiWayIf
+- OverloadedRecordDot
 - OverloadedStrings
 - Strict
 

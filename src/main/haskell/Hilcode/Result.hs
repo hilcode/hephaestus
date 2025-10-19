@@ -2,10 +2,10 @@
 
 module Hilcode.Result (
     Result (..),
-    fail,
+    err,
     mapError,
     fromEither,
-    isFailure,
+    isErr,
     isOk,
     ok,
     result,
@@ -27,19 +27,19 @@ import Prelude (Show (show), String)
 
 data Result failure value
     = Ok value
-    | Failure failure
+    | Err failure
 
 instance (Show failure, Show value) => Show (Result failure value) where
     show :: Result failure value -> String
     show (Ok value) = "Ok (" <> show value <> ")"
-    show (Failure failure) = "Failure (" <> show failure <> ")"
+    show (Err failure) = "Err (" <> show failure <> ")"
 
 instance Semigroup (Result failure value) where
     (<>) ::
         Result failure value ->
         Result failure value ->
         Result failure value
-    Failure _ <> result = result
+    Err _ <> result = result
     result <> _ = result
 
 instance Functor (Result failure) where
@@ -47,7 +47,7 @@ instance Functor (Result failure) where
         (input -> output) ->
         Result failure input ->
         Result failure output
-    fmap _ (Failure failure) = Failure failure
+    fmap _ (Err failure) = Err failure
     fmap function (Ok value) = Ok (function value)
 
 instance Applicative (Result failure) where
@@ -57,8 +57,8 @@ instance Applicative (Result failure) where
         Result failure (input -> output) ->
         Result failure input ->
         Result failure output
-    Failure failure <*> _ = Failure failure
-    _ <*> Failure failure = Failure failure
+    Err failure <*> _ = Err failure
+    _ <*> Err failure = Err failure
     Ok function <*> Ok input = Ok (function input)
 
 instance Monad (Result failure) where
@@ -66,7 +66,7 @@ instance Monad (Result failure) where
         Result failure input ->
         (input -> Result failure output) ->
         Result failure output
-    Failure failure >>= _ = Failure failure
+    Err failure >>= _ = Err failure
     Ok input >>= function = function input
 
 instance Foldable (Result failure) where
@@ -75,7 +75,7 @@ instance Foldable (Result failure) where
         (value -> monoid) ->
         Result failure value ->
         monoid
-    foldMap _ (Failure _) = mempty
+    foldMap _ (Err _) = mempty
     foldMap function (Ok value) = function value
 
     foldr ::
@@ -83,19 +83,19 @@ instance Foldable (Result failure) where
         output ->
         Result failure input ->
         output
-    foldr _ zero (Failure _) = zero
+    foldr _ zero (Err _) = zero
     foldr function zero (Ok value) = function value zero
 
     length ::
         Result failure value ->
         Int
-    length (Failure _) = 0
+    length (Err _) = 0
     length (Ok _) = 1
 
     null ::
         Result failure value ->
         Bool
-    null = isFailure
+    null = isErr
 
 instance Traversable (Result failure) where
     traverse ::
@@ -103,7 +103,7 @@ instance Traversable (Result failure) where
         (input -> applicative output) ->
         Result failure input ->
         applicative (Result failure output)
-    traverse _ (Failure failure) = pure (Failure failure)
+    traverse _ (Err failure) = pure (Err failure)
     traverse function (Ok value) = Ok <$> function value
 
 instance Bifunctor Result where
@@ -111,12 +111,12 @@ instance Bifunctor Result where
         (failure -> output) ->
         Result failure value ->
         Result output value
-    first mapFailure result =
+    first mapErr result =
         case result of
             Ok value ->
                 Ok value
-            Failure failure ->
-                Failure (mapFailure failure)
+            Err failure ->
+                Err (mapErr failure)
 
     second ::
         (input -> output) ->
@@ -126,20 +126,20 @@ instance Bifunctor Result where
         case result of
             Ok value ->
                 Ok (mapValue value)
-            Failure failure ->
-                Failure failure
+            Err failure ->
+                Err failure
 
     bimap ::
         (failureInput -> failureOutput) ->
         (input -> output) ->
         Result failureInput input ->
         Result failureOutput output
-    bimap mapFailure mapValue result =
+    bimap mapErr mapValue result =
         case result of
             Ok value ->
                 Ok (mapValue value)
-            Failure failure ->
-                Failure (mapFailure failure)
+            Err failure ->
+                Err (mapErr failure)
 
 instance Bifoldable Result where
     bifoldMap ::
@@ -147,34 +147,34 @@ instance Bifoldable Result where
         (value -> monoid) ->
         Result failure value ->
         monoid
-    bifoldMap mapFailure mapValue result =
+    bifoldMap mapErr mapValue result =
         case result of
             Ok value ->
                 mapValue value
-            Failure failure ->
-                mapFailure failure
+            Err failure ->
+                mapErr failure
     bifoldr ::
         (failure -> output -> output) ->
         (value -> output -> output) ->
         output ->
         Result failure value ->
         output
-    bifoldr foldFailure foldValue zero result =
+    bifoldr foldErr foldValue zero result =
         case result of
             Ok value ->
                 foldValue value zero
-            Failure failure ->
-                foldFailure failure zero
+            Err failure ->
+                foldErr failure zero
 
 ok ::
     value ->
     Result failure value
 ok = Ok
 
-fail ::
+err ::
     failure ->
     Result failure value
-fail = Failure
+err = Err
 
 isOk ::
     Result failure value ->
@@ -183,15 +183,15 @@ isOk result =
     case result of
         Ok _ ->
             True
-        Failure _ ->
+        Err _ ->
             False
 
-isFailure ::
+isErr ::
     Result failure value ->
     Bool
-isFailure result =
+isErr result =
     case result of
-        Failure _ ->
+        Err _ ->
             True
         Ok _ ->
             False
@@ -201,18 +201,18 @@ result ::
     (input -> output) ->
     Result failure input ->
     output
-result mapFailure mapInput result =
+result mapErr mapInput result =
     case result of
         Ok input ->
             mapInput input
-        Failure failure ->
-            mapFailure failure
+        Err failure ->
+            mapErr failure
 
 fromEither ::
     Either failure value ->
     Result failure value
 fromEither (Left failure) =
-    Failure failure
+    Err failure
 fromEither (Right value) =
     Ok value
 

@@ -26,6 +26,7 @@ library
       Hilcode.Misc
   other-modules:
       Hilcode.Glob
+      Hilcode.Logger
       Hilcode.Result
       Main
       Paths_hephaestus
@@ -34,6 +35,7 @@ library
   default-extensions:
       FunctionalDependencies
       MultiWayIf
+      OverloadedRecordDot
       OverloadedStrings
       Strict
   ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
@@ -56,6 +58,7 @@ executable hephaestus
   main-is: Main.hs
   other-modules:
       Hilcode.Glob
+      Hilcode.Logger
       Hilcode.Misc
       Hilcode.Result
       Paths_hephaestus
@@ -64,6 +67,7 @@ executable hephaestus
   default-extensions:
       FunctionalDependencies
       MultiWayIf
+      OverloadedRecordDot
       OverloadedStrings
       Strict
   ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing
@@ -93,6 +97,7 @@ test-suite test
   default-extensions:
       FunctionalDependencies
       MultiWayIf
+      OverloadedRecordDot
       OverloadedStrings
       Strict
   ghc-options: -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -Wtabs -Wno-name-shadowing

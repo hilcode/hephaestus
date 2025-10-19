@@ -7,15 +7,21 @@ import System.OsPath (
     encodeFS,
     (</>),
  )
-import Prelude hiding (fail)
+import Hilcode.Logger qualified as Logger
+import Hilcode.Logger (LogLevel(..))
+import Data.Text qualified
 
 main :: IO ()
-main = do
-    currentDir <- encodeFS "."
-    currentDir <- canonicalizePath currentDir
-    print currentDir
-    print $ mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
-    putStrLn "Okay"
+main =
+    let
+        logger :: Logger.Handle IO
+        logger = Logger.new DEBUG
+    in do
+        currentDir <- encodeFS "."
+        currentDir <- canonicalizePath currentDir
+        logger.debug (Data.Text.show currentDir)
+        print $ mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
+        putStrLn "Okay"
 
 class HasSlash base extension result where
     (/) :: base -> extension -> result
