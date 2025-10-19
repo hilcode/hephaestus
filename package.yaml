@@ -41,6 +41,7 @@ dependencies:
 - os-string
 - text
 - text-show
+- time
 - vector
 
 executables:

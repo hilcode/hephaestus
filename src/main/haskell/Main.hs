@@ -1,27 +1,32 @@
 module Main where
 
+import Data.Text qualified
+import Hilcode.Clock qualified as Clock
 import Hilcode.Glob (mkGlob)
+import Hilcode.Logger (LogLevel (..))
+import Hilcode.Logger qualified as Logger
 import System.Directory.OsPath (canonicalizePath)
 import System.OsPath (
     OsPath,
     encodeFS,
     (</>),
  )
-import Hilcode.Logger qualified as Logger
-import Hilcode.Logger (LogLevel(..))
-import Data.Text qualified
 
 main :: IO ()
 main =
     let
+        clock :: Clock.Handle IO
+        clock = Clock.new
+
         logger :: Logger.Handle IO
-        logger = Logger.new DEBUG
-    in do
-        currentDir <- encodeFS "."
-        currentDir <- canonicalizePath currentDir
-        logger.debug (Data.Text.show currentDir)
-        print $ mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
-        putStrLn "Okay"
+        logger = Logger.new clock DEBUG
+     in
+        do
+            currentDir <- encodeFS "."
+            currentDir <- canonicalizePath currentDir
+            logger.debug (Data.Text.show currentDir)
+            print $ mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
+            putStrLn "Okay"
 
 class HasSlash base extension result where
     (/) :: base -> extension -> result

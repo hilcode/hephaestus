@@ -25,6 +25,7 @@ library
   exposed-modules:
       Hilcode.Misc
   other-modules:
+      Hilcode.Clock
       Hilcode.Glob
       Hilcode.Logger
       Hilcode.Result
@@ -51,12 +52,14 @@ library
     , os-string
     , text
     , text-show
+    , time
     , vector
   default-language: GHC2024
 
 executable hephaestus
   main-is: Main.hs
   other-modules:
+      Hilcode.Clock
       Hilcode.Glob
       Hilcode.Logger
       Hilcode.Misc
@@ -84,6 +87,7 @@ executable hephaestus
     , os-string
     , text
     , text-show
+    , time
     , vector
   default-language: GHC2024
 
@@ -114,5 +118,6 @@ test-suite test
     , os-string
     , text
     , text-show
+    , time
     , vector
   default-language: GHC2024
