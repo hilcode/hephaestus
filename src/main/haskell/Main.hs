@@ -1,7 +1,6 @@
 module Main where
 
 import Data.Text qualified
-import Data.Time (getCurrentTime)
 import Hilcode.Clock qualified as Clock
 import Hilcode.Glob (mkGlob)
 import Hilcode.Logger (LogLevel (..))
@@ -16,8 +15,7 @@ import System.OsPath (
 main :: IO ()
 main =
     do
-        programStart <- getCurrentTime
-        let clock :: Clock.Handle IO = Clock.new programStart
+        clock <- Clock.new
         let logger :: Logger.Handle IO = Logger.new clock DEBUG
         currentDir <- encodeFS "."
         currentDir <- canonicalizePath currentDir

@@ -7,7 +7,6 @@ module Hilcode.Clock (
 import Data.Text (Text, show)
 import Data.Time (
     NominalDiffTime,
-    UTCTime,
     diffTimeToPicoseconds,
     diffUTCTime,
     nominalDiffTimeToSeconds,
@@ -21,15 +20,12 @@ newtype Handle monad
     { getElapsedTime :: monad NominalDiffTime
     }
 
-new :: UTCTime -> Handle IO
-new start =
-    let
-        elapsedTime :: IO NominalDiffTime
-        elapsedTime = (`diffUTCTime` start) `fmap` getCurrentTime
-     in
-        Handle
-            { getElapsedTime = elapsedTime
-            }
+new :: IO (Handle IO)
+new = do
+    start <- getCurrentTime
+    pure $ Handle
+        { getElapsedTime = (`diffUTCTime` start) `fmap` getCurrentTime
+        }
 
 toText :: NominalDiffTime -> Text
 toText delta =
