@@ -43,7 +43,9 @@ logDebug clock text = do
     Data.Text.IO.putStrLn $ "[" <> Clock.toText elapsedTime <> "] DEBUG " <> text
 
 logInfo :: Clock.Handle IO -> Text -> IO ()
-logInfo _clock text = Data.Text.IO.putStrLn $ "INFO  " <> text
+logInfo clock text = do
+    elapsedTime <- clock.getElapsedTime
+    Data.Text.IO.putStrLn $ "[" <> Clock.toText elapsedTime <> "] INFO  " <> text
 
 logOff :: Text -> IO ()
 logOff _ = pure ()

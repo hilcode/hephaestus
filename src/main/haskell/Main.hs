@@ -1,7 +1,7 @@
 module Main where
 
-import Data.Time (getCurrentTime)
 import Data.Text qualified
+import Data.Time (getCurrentTime)
 import Hilcode.Clock qualified as Clock
 import Hilcode.Glob (mkGlob)
 import Hilcode.Logger (LogLevel (..))
@@ -17,11 +17,12 @@ main :: IO ()
 main =
     do
         programStart <- getCurrentTime
-        let clock = Clock.new programStart
-        let logger = Logger.new clock DEBUG
+        let clock :: Clock.Handle IO = Clock.new programStart
+        let logger :: Logger.Handle IO = Logger.new clock DEBUG
         currentDir <- encodeFS "."
         currentDir <- canonicalizePath currentDir
         logger.debug (Data.Text.show currentDir)
+        logger.info "Hello World!"
         print $ mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
         putStrLn "Okay"
 
