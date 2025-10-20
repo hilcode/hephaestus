@@ -15,10 +15,10 @@ import System.OsPath (
 main :: IO ()
 main =
     do
-        clock <- Clock.new
+        clock :: Clock.Handle IO <- Clock.new
         let logger :: Logger.Handle IO = Logger.new clock DEBUG
-        currentDir <- encodeFS "."
-        currentDir <- canonicalizePath currentDir
+        currentDir :: OsPath <- encodeFS "."
+        currentDir :: OsPath <- canonicalizePath currentDir
         logger.debug (Data.Text.show currentDir)
         logger.info "Hello World!"
         print $ mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
