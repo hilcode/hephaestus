@@ -39,8 +39,8 @@ new clock logLevel =
 
 logDebug :: Clock.Handle IO -> Text -> IO ()
 logDebug clock text = do
-    currentTime <- clock.getUtcTime
-    Data.Text.IO.putStrLn $ "[" <> Clock.utcToText currentTime <> "] DEBUG " <> text
+    elapsedTime <- clock.getElapsedTime
+    Data.Text.IO.putStrLn $ "[" <> Clock.toText elapsedTime <> "] DEBUG " <> text
 
 logInfo :: Clock.Handle IO -> Text -> IO ()
 logInfo _clock text = Data.Text.IO.putStrLn $ "INFO  " <> text

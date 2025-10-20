@@ -1,32 +1,37 @@
 module Hilcode.Clock (
     Handle (..),
     new,
-    utcToText,
+    toText,
 ) where
 
-import Data.Text (Text)
-import Data.Text qualified
+import Data.Text (Text, pack)
 import Data.Time (
     UTCTime,
-    ZonedTime,
+    NominalDiffTime, diffUTCTime, nominalDiffTimeToSeconds,  diffTimeToPicoseconds
  )
 import Data.Time.Clock (getCurrentTime)
-import Data.Time.Format (defaultTimeLocale, formatTime)
-import Data.Time.LocalTime (getZonedTime)
 
-data Handle monad
+newtype Handle monad
     = Handle
-    { getUtcTime :: monad UTCTime
-    , getLocalTime :: monad ZonedTime
+    { getElapsedTime :: monad NominalDiffTime
     }
 
-new :: Handle IO
-new =
-    Handle
-        { getUtcTime = getCurrentTime
-        , getLocalTime = getZonedTime
-        }
+new :: UTCTime -> Handle IO
+new start =
+    let
+        elapsedTime :: IO NominalDiffTime
+        elapsedTime =(`diffUTCTime` start) `fmap` getCurrentTime
+    in
+        Handle
+            { getElapsedTime = elapsedTime
+            }
 
-utcToText :: UTCTime -> Text
-utcToText utcTime =
-    Data.Text.pack $ formatTime defaultTimeLocale "%Y-%m-%d %H:%M:%S" utcTime
+toText :: NominalDiffTime -> Text
+toText delta =
+    let
+        x2 :: Integer
+        x2 = diffTimeToPicoseconds $ realToFrac $ nominalDiffTimeToSeconds delta
+        x3 :: Integer
+        x3 = (x2 + 500000) `div` 1000000
+    in
+        pack $ show x3
