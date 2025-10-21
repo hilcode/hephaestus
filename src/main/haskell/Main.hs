@@ -17,12 +17,11 @@ main =
     do
         clock :: Clock.Handle IO <- Clock.new
         let logger :: Logger.Handle IO = Logger.new clock DEBUG
-        currentDir :: OsPath <- encodeFS "."
-        currentDir :: OsPath <- canonicalizePath currentDir
-        logger.debug (Data.Text.show currentDir)
-        logger.info "Hello World!"
-        print $ mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
-        putStrLn "Okay"
+        logger.debug "Hephaestus started"
+        currentDir :: OsPath <- encodeFS "." >>= canonicalizePath
+        logger.debug $ Data.Text.show currentDir
+        logger.info $ Data.Text.show $ mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
+        logger.debug "Done"
 
 class HasSlash base extension result where
     (/) :: base -> extension -> result

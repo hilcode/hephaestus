@@ -40,12 +40,13 @@ new clock logLevel =
 logDebug :: Clock.Handle IO -> Text -> IO ()
 logDebug clock text = do
     elapsedTime <- clock.getElapsedTime
-    Data.Text.IO.putStrLn $ "[" <> Clock.toText elapsedTime <> "] DEBUG " <> text
+    Data.Text.IO.putStrLn $ Clock.toText elapsedTime <> " DEBUG | " <> text
 
 logInfo :: Clock.Handle IO -> Text -> IO ()
 logInfo clock text = do
     elapsedTime <- clock.getElapsedTime
-    Data.Text.IO.putStrLn $ "[" <> Clock.toText elapsedTime <> "] INFO  " <> text
+    Data.Text.IO.putStrLn $ Clock.toText elapsedTime <> " INFO  | " <> text
 
+{- HLINT ignore "Redundant irrefutable pattern" #-}
 logOff :: Text -> IO ()
-logOff _ = pure ()
+logOff ~_ = pure ()
