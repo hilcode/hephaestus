@@ -2,37 +2,18 @@ module Hilcode.Glob (
     mkGlob,
 ) where
 
-import Control.Monad qualified
-import Data.List (unsnoc)
+import Data.List qualified
 import Data.Set (Set)
 import Data.Set qualified
 import Data.Vector (Vector)
 import Data.Vector qualified
-import Hilcode.Result (
-    Result,
-    err,
-    fromEither,
-    mapError,
-    ok,
- )
-import System.Directory.OsPath qualified
-import System.IO (
-    utf16,
-    utf8,
- )
-import System.OsPath (
-    OsChar,
-    OsPath,
-    OsString,
-    dropTrailingPathSeparator,
-    encodeWith,
-    isAbsolute,
-    pack,
-    splitPath,
-    unpack,
-    unsafeEncodeUtf,
-    unsafeFromChar,
- )
+import Hilcode.FileSystem (RelDir (..), RelFile (..))
+import Hilcode.FileSystem qualified as FileSystem
+import Hilcode.Result (Result (..))
+import Hilcode.Result qualified
+import System.IO qualified
+import System.OsPath (OsChar, OsPath, OsString)
+import System.OsPath qualified
 import System.OsString qualified
 
 data GlobPart
@@ -124,66 +105,33 @@ data Glob
     deriving stock (Eq, Ord, Show)
 
 data GlobFiber
-    = GlobFiber OsPath Glob
+    = GlobFiber RelDir Glob
     deriving stock (Eq, Ord)
 
-data OsPathType
-    = Directory
-    | File
-    | Other
-
-ifM :: IO Bool -> IO a -> IO a -> IO a
-ifM predicateM ifTrue ifFalse = do
-    predicate <- predicateM
-    if predicate then ifTrue else ifFalse
-
-toOsPathType :: OsPath -> IO OsPathType
-toOsPathType osPath = do
-    ifM
-        (System.Directory.OsPath.doesDirectoryExist osPath)
-        (pure Directory)
-        ( ifM
-            (System.Directory.OsPath.doesFileExist osPath)
-            (pure File)
-            (pure Other)
-        )
-
-split :: [OsPath] -> IO ([OsPath], [OsPath])
-split =
-    Control.Monad.foldM step ([], [])
-  where
-    step :: ([OsPath], [OsPath]) -> OsPath -> IO ([OsPath], [OsPath])
-    step (directories, files) osPath = do
-        osPathType <- toOsPathType osPath
-        case osPathType of
-            Directory ->
-                pure (osPath : directories, files)
-            File ->
-                pure (directories, osPath : files)
-            Other ->
-                pure (directories, files)
-
-matchGlobFiber :: GlobFiber -> IO (Set GlobFiber, Vector OsPath)
-matchGlobFiber (GlobFiber osPath glob) = do
-    entries <- System.Directory.OsPath.listDirectory osPath
-    (_directories, files) <- split entries
+matchGlobFiber :: (Monad monad) => FileSystem.Handle monad -> GlobFiber -> monad (Set GlobFiber, Vector OsPath)
+matchGlobFiber fileSystem (GlobFiber relDir glob) = do
+    (_directories, files) :: (Vector RelDir, Vector RelFile) <- fileSystem.getFiles relDir
     case glob of
         Glob [] fileGlob ->
             let
-                _x1 :: [OsString]
-                _x1 = (`matchFileGlob` fileGlob) `filter` files
+                _f1 :: RelFile -> OsString
+                _f1 relFile =
+                    case relFile of
+                        RelFile osString ->
+                            osString
+                _x1 = (`matchFileGlob` fileGlob) `Data.Vector.filter` (_f1 <$> files)
              in
                 undefined
         Glob (_dirGlob : _dirGlobs) _fileGlob ->
             undefined
 
-_match :: OsPath -> Glob -> IO (Vector OsPath)
-_match directory glob =
+_match :: forall monad. (Monad monad) => FileSystem.Handle monad -> RelDir -> Glob -> monad (Vector OsPath)
+_match fileSystem directory glob =
     let
         fiber :: GlobFiber
         fiber = GlobFiber directory glob
 
-        go :: (Set GlobFiber, Vector OsPath) -> IO (Vector OsPath)
+        go :: (Set GlobFiber, Vector OsPath) -> monad (Vector OsPath)
         go (fibers, foundSoFar) =
             if Data.Set.null fibers
                 then pure foundSoFar
@@ -192,8 +140,8 @@ _match directory glob =
                         globFibers :: [GlobFiber]
                         globFibers = Data.Set.elems fibers
 
-                        newState :: IO [(Set GlobFiber, Vector OsPath)]
-                        newState = mapM matchGlobFiber globFibers
+                        newState :: monad [(Set GlobFiber, Vector OsPath)]
+                        newState = mapM (matchGlobFiber fileSystem) globFibers
                      in
                         do
                             state :: (Set GlobFiber, Vector OsPath) <- mconcat `fmap` newState
@@ -205,7 +153,10 @@ mkGlob :: String -> Result GlobError Glob
 mkGlob text =
     let
         osPath :: Result GlobError OsPath
-        osPath = mapError (const EncodingProblem) (fromEither $ encodeWith utf8 utf16 text)
+        osPath =
+            Hilcode.Result.mapError
+                (const EncodingProblem)
+                (Hilcode.Result.fromEither $ System.OsPath.encodeWith System.IO.utf8 System.IO.utf16 text)
 
         glob :: Result GlobError Glob
         glob = osPath >>= fromOsString
@@ -221,16 +172,16 @@ data GlobError
 
 fromOsString :: OsString -> Result GlobError Glob
 fromOsString osString =
-    if isAbsolute osString
+    if System.OsPath.isAbsolute osString
         then
-            err AbsoluteGlob
-        else case unsnoc $ splitPath osString of
+            Err AbsoluteGlob
+        else case Data.List.unsnoc $ System.OsPath.splitPath osString of
             Nothing ->
-                err EmptyGlob
+                Err EmptyGlob
             Just (dirs, file) ->
                 let
                     fixedDirs :: [OsPath]
-                    fixedDirs = dropTrailingPathSeparator `fmap` dirs
+                    fixedDirs = System.OsPath.dropTrailingPathSeparator `fmap` dirs
 
                     dirGlobs :: Result GlobError [DirGlob]
                     dirGlobs = mapM mkDirGlob fixedDirs
@@ -286,26 +237,26 @@ fixGlob (Glob dirGlobs fileGlob) =
         Glob (fixDirGlobs dirGlobs) (fixFileGlob fileGlob)
 
 sStarStar :: OsString
-sStarStar = unsafeEncodeUtf "**"
+sStarStar = System.OsPath.unsafeEncodeUtf "**"
 
 sStar :: OsString
-sStar = unsafeEncodeUtf "*"
+sStar = System.OsPath.unsafeEncodeUtf "*"
 
 cStar :: OsChar
-cStar = unsafeFromChar '*'
+cStar = System.OsPath.unsafeFromChar '*'
 
 cQuestionMark :: OsChar
-cQuestionMark = unsafeFromChar '?'
+cQuestionMark = System.OsPath.unsafeFromChar '?'
 
 mkDirGlob :: OsString -> Result GlobError DirGlob
 mkDirGlob dir =
     case dir of
         starStar
             | starStar == sStarStar ->
-                ok AnyDirs
+                Ok AnyDirs
         star
             | star == sStar ->
-                ok AnySingleDir
+                Ok AnySingleDir
         globParts ->
             DirMatch `fmap` mkGlobParts globParts
 
@@ -314,7 +265,7 @@ mkFileGlob file =
     case file of
         star
             | star == sStar ->
-                ok AnySingleFile
+                Ok AnySingleFile
         globParts ->
             FileMatch `fmap` mkGlobParts globParts
 
@@ -344,9 +295,9 @@ mkGlobParts text =
                 _ ->
                     case notSpecial `span` osChars of
                         (lhs, rhs) ->
-                            Verbatim (pack lhs) : toGlobParts rhs
+                            Verbatim (System.OsPath.pack lhs) : toGlobParts rhs
 
         globParts :: [GlobPart]
-        globParts = toGlobParts $ unpack text
+        globParts = toGlobParts $ System.OsPath.unpack text
      in
-        ok globParts
+        Ok globParts
