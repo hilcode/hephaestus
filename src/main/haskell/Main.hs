@@ -2,54 +2,19 @@ module Main where
 
 import Data.Text qualified
 import Hilcode.Clock qualified as Clock
-import Hilcode.Glob (mkGlob)
+import Hilcode.FileSystem (AbsDir)
+import Hilcode.FileSystem qualified as FileSystem
+import Hilcode.Glob qualified
 import Hilcode.Logger (LogLevel (..))
 import Hilcode.Logger qualified as Logger
-import System.Directory.OsPath (canonicalizePath)
-import System.OsPath (
-    OsPath,
-    encodeFS,
-    (</>),
- )
 
 main :: IO ()
-main =
-    do
-        clock :: Clock.Handle IO <- Clock.new
-        let logger :: Logger.Handle IO = Logger.new clock DEBUG
-        logger.debug "Hephaestus started"
-        currentDir :: OsPath <- encodeFS "." >>= canonicalizePath
-        logger.debug $ Data.Text.show currentDir
-        logger.info $ Data.Text.show $ mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
-        logger.debug "Done"
-
-class HasSlash base extension result where
-    (/) :: base -> extension -> result
-
-newtype AbsDir
-    = AbsDir OsPath
-
-newtype RelDir
-    = RelDir OsPath
-
-newtype RelFile
-    = RelFile OsPath
-
-newtype AbsFile
-    = AbsFile OsPath
-
-instance HasSlash AbsDir RelDir AbsDir where
-    (/) :: AbsDir -> RelDir -> AbsDir
-    AbsDir lhs / RelDir rhs = AbsDir (lhs </> rhs)
-
-instance HasSlash AbsDir RelFile AbsFile where
-    (/) :: AbsDir -> RelFile -> AbsFile
-    AbsDir lhs / RelFile rhs = AbsFile (lhs </> rhs)
-
-instance HasSlash RelDir RelDir RelDir where
-    (/) :: RelDir -> RelDir -> RelDir
-    RelDir lhs / RelDir rhs = RelDir (lhs </> rhs)
-
-instance HasSlash RelDir RelFile RelFile where
-    (/) :: RelDir -> RelFile -> RelFile
-    RelDir lhs / RelFile rhs = RelFile (lhs </> rhs)
+main = do
+    clock :: Clock.Handle IO <- Clock.new
+    let logger :: Logger.Handle IO = Logger.new clock DEBUG
+    logger.debug "Hephaestus started"
+    let fileSystem :: FileSystem.Handle IO = FileSystem.new
+    currentDir :: AbsDir <- fileSystem.getCurrentDir
+    logger.debug $ Data.Text.show currentDir
+    logger.info $ Data.Text.show $ Hilcode.Glob.mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
+    logger.debug "Done"

@@ -45,22 +45,22 @@ data GlobPartFiber
     = GlobPartFiber OsString [GlobPart]
     deriving stock (Eq, Ord)
 
-_matchGlobPartFiber :: GlobPartFiber -> Either (Set GlobPartFiber) Bool
-_matchGlobPartFiber (GlobPartFiber name []) =
+matchGlobPartFiber :: GlobPartFiber -> Either (Set GlobPartFiber) Bool
+matchGlobPartFiber (GlobPartFiber name []) =
     Right $ System.OsString.null name
-_matchGlobPartFiber (GlobPartFiber name (Verbatim prefix : globParts)) =
+matchGlobPartFiber (GlobPartFiber name (Verbatim prefix : globParts)) =
     case System.OsString.stripPrefix prefix name of
         Nothing ->
             Right False
         Just tailOsChars ->
             Left $ Data.Set.singleton (GlobPartFiber tailOsChars globParts)
-_matchGlobPartFiber (GlobPartFiber name (AnySingleChar : globParts)) =
+matchGlobPartFiber (GlobPartFiber name (AnySingleChar : globParts)) =
     case System.OsString.uncons name of
         Nothing ->
             Right False
         Just (_, tailOsChars) ->
             Left $ Data.Set.singleton (GlobPartFiber tailOsChars globParts)
-_matchGlobPartFiber (GlobPartFiber name allGlobParts@(AnyChars : globParts)) =
+matchGlobPartFiber (GlobPartFiber name allGlobParts@(AnyChars : globParts)) =
     case System.OsString.uncons name of
         Nothing ->
             Left $ Data.Set.singleton (GlobPartFiber name globParts)
@@ -91,10 +91,10 @@ data FileGlob
     | FileMatch [GlobPart]
     deriving stock (Eq, Ord, Show)
 
-_matchFileGlob :: OsString -> FileGlob -> Bool
-_matchFileGlob _ AnySingleFile =
+matchFileGlob :: OsString -> FileGlob -> Bool
+matchFileGlob _ AnySingleFile =
     True
-_matchFileGlob name (FileMatch globParts) =
+matchFileGlob name (FileMatch globParts) =
     let
         globPartFiber :: GlobPartFiber
         globPartFiber = GlobPartFiber name globParts
@@ -103,7 +103,7 @@ _matchFileGlob name (FileMatch globParts) =
   where
     go :: Set GlobPartFiber -> Bool
     go fibers =
-        case simplify Data.Set.empty (_matchGlobPartFiber `fmap` Data.Set.elems fibers) of
+        case simplify Data.Set.empty (matchGlobPartFiber `fmap` Data.Set.elems fibers) of
             Left fibers ->
                 go fibers
             Right result ->
@@ -163,14 +163,17 @@ split =
             Other ->
                 pure (directories, files)
 
-_matchGlobFiber :: GlobFiber -> IO (Set GlobFiber, Vector OsPath)
-_matchGlobFiber (GlobFiber osPath glob) = do
+matchGlobFiber :: GlobFiber -> IO (Set GlobFiber, Vector OsPath)
+matchGlobFiber (GlobFiber osPath glob) = do
     entries <- System.Directory.OsPath.listDirectory osPath
     (_directories, files) <- split entries
     case glob of
         Glob [] fileGlob ->
-            let _x1 = (`_matchFileGlob` fileGlob) `filter` files
-             in undefined
+            let
+                _x1 :: [OsString]
+                _x1 = (`matchFileGlob` fileGlob) `filter` files
+             in
+                undefined
         Glob (_dirGlob : _dirGlobs) _fileGlob ->
             undefined
 
@@ -190,7 +193,7 @@ _match directory glob =
                         globFibers = Data.Set.elems fibers
 
                         newState :: IO [(Set GlobFiber, Vector OsPath)]
-                        newState = mapM _matchGlobFiber globFibers
+                        newState = mapM matchGlobFiber globFibers
                      in
                         do
                             state :: (Set GlobFiber, Vector OsPath) <- mconcat `fmap` newState

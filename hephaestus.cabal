@@ -26,6 +26,7 @@ library
       Hilcode.Misc
   other-modules:
       Hilcode.Clock
+      Hilcode.FileSystem
       Hilcode.Glob
       Hilcode.Logger
       Hilcode.Result
@@ -60,6 +61,7 @@ executable hephaestus
   main-is: Main.hs
   other-modules:
       Hilcode.Clock
+      Hilcode.FileSystem
       Hilcode.Glob
       Hilcode.Logger
       Hilcode.Misc
