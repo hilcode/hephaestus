@@ -7,7 +7,7 @@ import Data.Set (Set)
 import Data.Set qualified
 import Data.Vector (Vector)
 import Data.Vector qualified
-import Hilcode.FileSystem (RelDir (..), RelFile (..))
+import Hilcode.FileSystem (RelDir (..), RelFile (..), (//))
 import Hilcode.FileSystem qualified as FileSystem
 import Hilcode.Result (Result (..))
 import Hilcode.Result qualified
@@ -108,30 +108,38 @@ data GlobFiber
     = GlobFiber RelDir Glob
     deriving stock (Eq, Ord)
 
-matchGlobFiber :: (Monad monad) => FileSystem.Handle monad -> GlobFiber -> monad (Set GlobFiber, Vector OsPath)
+matchGlobFiber :: forall monad . (Monad monad) => FileSystem.Handle monad -> GlobFiber -> monad (Set GlobFiber, Vector RelFile)
 matchGlobFiber fileSystem (GlobFiber relDir glob) = do
     (_directories, files) :: (Vector RelDir, Vector RelFile) <- fileSystem.getFiles relDir
     case glob of
         Glob [] fileGlob ->
             let
-                _f1 :: RelFile -> OsString
-                _f1 relFile =
+                toOsString :: RelFile -> OsString
+                toOsString relFile =
                     case relFile of
                         RelFile osString ->
                             osString
-                _x1 = (`matchFileGlob` fileGlob) `Data.Vector.filter` (_f1 <$> files)
+
+                osStringMatches :: Vector OsString
+                osStringMatches = (`matchFileGlob` fileGlob) `Data.Vector.filter` (toOsString <$> files)
+
+                toRelFile :: OsString -> RelFile
+                toRelFile osString = relDir // RelFile osString
+
+                fileMatches :: Vector RelFile
+                fileMatches = toRelFile <$> osStringMatches
              in
-                undefined
+                pure (Data.Set.empty, fileMatches)
         Glob (_dirGlob : _dirGlobs) _fileGlob ->
             undefined
 
-_match :: forall monad. (Monad monad) => FileSystem.Handle monad -> RelDir -> Glob -> monad (Vector OsPath)
+_match :: forall monad. (Monad monad) => FileSystem.Handle monad -> RelDir -> Glob -> monad (Vector RelFile)
 _match fileSystem directory glob =
     let
         fiber :: GlobFiber
         fiber = GlobFiber directory glob
 
-        go :: (Set GlobFiber, Vector OsPath) -> monad (Vector OsPath)
+        go :: (Set GlobFiber, Vector RelFile) -> monad (Vector RelFile)
         go (fibers, foundSoFar) =
             if Data.Set.null fibers
                 then pure foundSoFar
@@ -140,11 +148,11 @@ _match fileSystem directory glob =
                         globFibers :: [GlobFiber]
                         globFibers = Data.Set.elems fibers
 
-                        newState :: monad [(Set GlobFiber, Vector OsPath)]
+                        newState :: monad [(Set GlobFiber, Vector RelFile)]
                         newState = mapM (matchGlobFiber fileSystem) globFibers
                      in
                         do
-                            state :: (Set GlobFiber, Vector OsPath) <- mconcat `fmap` newState
+                            state :: (Set GlobFiber, Vector RelFile) <- mconcat `fmap` newState
                             go state
      in
         go (Data.Set.singleton fiber, Data.Vector.empty)
