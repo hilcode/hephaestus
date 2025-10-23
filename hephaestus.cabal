@@ -29,6 +29,7 @@ library
       Hilcode.FileSystem
       Hilcode.Glob
       Hilcode.Logger
+      Hilcode.Parser
       Hilcode.Result
       Main
       Paths_hephaestus
@@ -65,6 +66,7 @@ executable hephaestus
       Hilcode.Glob
       Hilcode.Logger
       Hilcode.Misc
+      Hilcode.Parser
       Hilcode.Result
       Paths_hephaestus
   hs-source-dirs:

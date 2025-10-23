@@ -108,7 +108,7 @@ data GlobFiber
     = GlobFiber RelDir Glob
     deriving stock (Eq, Ord)
 
-matchGlobFiber :: forall monad . (Monad monad) => FileSystem.Handle monad -> GlobFiber -> monad (Set GlobFiber, Vector RelFile)
+matchGlobFiber :: forall monad. (Monad monad) => FileSystem.Handle monad -> GlobFiber -> monad (Set GlobFiber, Vector RelFile)
 matchGlobFiber fileSystem (GlobFiber relDir glob) = do
     (_directories, files) :: (Vector RelDir, Vector RelFile) <- fileSystem.getFiles relDir
     case glob of
