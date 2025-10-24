@@ -1,14 +1,19 @@
 module Hilcode.Glob (
     mkGlob,
+    GlobError (..),
 ) where
 
+import Data.ByteString qualified
 import Data.List qualified
 import Data.Set (Set)
 import Data.Set qualified
+import Data.Text (Text)
 import Data.Vector (Vector)
 import Data.Vector qualified
 import Hilcode.FileSystem (RelDir (..), RelFile (..), (//))
 import Hilcode.FileSystem qualified as FileSystem
+import Hilcode.Parser (Parser)
+import Hilcode.Parser qualified
 import Hilcode.Result (Result (..))
 import Hilcode.Result qualified
 import System.IO qualified
@@ -157,6 +162,34 @@ _match fileSystem directory glob =
      in
         go (Data.Set.singleton fiber, Data.Vector.empty)
 
+_mkGlob2 :: Text -> Result GlobError Glob
+_mkGlob2 text =
+    let
+        parseDirGlob :: Parser GlobError DirGlob
+        parseDirGlob = undefined
+
+        parseFileGlob :: Parser GlobError FileGlob
+        parseFileGlob = undefined
+
+        parseGlob :: Parser GlobError Glob
+        parseGlob = do
+            dirGlobs <- Hilcode.Parser.repeat parseDirGlob
+            Glob dirGlobs <$> parseFileGlob
+
+        x2 :: Result GlobError Glob
+        x2 = case Hilcode.Parser.runParser parseGlob text of
+            Ok (Just (rest, glob))
+                | Data.ByteString.null rest ->
+                    Ok glob
+            Err parseError ->
+                Err parseError
+            Ok Nothing ->
+                Err NoMatch
+            Ok (Just (_, _)) ->
+                Err Incomplete
+     in
+        x2
+
 mkGlob :: String -> Result GlobError Glob
 mkGlob text =
     let
@@ -176,6 +209,8 @@ data GlobError
     | EmptyGlob
     | InvalidGlob
     | EncodingProblem
+    | Incomplete
+    | NoMatch
     deriving stock (Show)
 
 fromOsString :: OsString -> Result GlobError Glob

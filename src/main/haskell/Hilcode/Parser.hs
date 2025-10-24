@@ -7,8 +7,6 @@ import Data.List qualified
 import Data.Text (Text)
 import Data.Text qualified
 import Data.Tuple qualified
-import Data.Vector (Vector)
-import Data.Vector qualified
 import Hilcode.Result (Result (..))
 import System.OsPath (OsChar, OsString)
 import System.OsPath qualified
@@ -19,6 +17,10 @@ type ParseResult e a =
 
 newtype Parser e a
     = Parser {parse :: ByteString -> ParseResult e a}
+
+runParser :: forall e a. Parser e a -> Text -> ParseResult e a
+runParser (Parser parse) text =
+    parse $ Data.ByteString.concat $ Data.ByteString.Char8.singleton <$> Data.Text.unpack text
 
 instance Functor (Parser e) where
     fmap :: forall a b. (a -> b) -> Parser e a -> Parser e b
@@ -182,16 +184,16 @@ firstOf (Parser lhs) (Parser rhs) =
      in
         Parser{parse}
 
-repeat :: forall e a. Parser e a -> Parser e (Vector a)
+repeat :: forall e a. Parser e a -> Parser e [a]
 repeat (Parser parseA) =
     let
-        go :: [a] -> ByteString -> ParseResult e (Vector a)
+        go :: [a] -> ByteString -> ParseResult e [a]
         go accumulator source =
             case parseA source of
                 Ok Nothing ->
                     let
-                        results :: Vector a
-                        results = Data.Vector.fromList $ Data.List.reverse accumulator
+                        results :: [a]
+                        results = Data.List.reverse accumulator
                      in
                         Ok $ Just (source, results)
                 Ok (Just (nextSource, a)) ->
@@ -199,25 +201,39 @@ repeat (Parser parseA) =
                 Err parseError ->
                     Err parseError
 
-        parse :: ByteString -> ParseResult e (Vector a)
+        parse :: ByteString -> ParseResult e [a]
         parse = go []
      in
         Parser{parse}
 
-repeat1 :: forall e a. Parser e a -> Parser e (Vector a)
+repeat1 :: forall e a. Parser e a -> Parser e [a]
 repeat1 parser =
     let
-        parse :: ByteString -> ParseResult e (Vector a)
+        parse :: ByteString -> ParseResult e [a]
         parse source =
             case repeat parser of
                 Parser parse ->
                     case parse source of
                         Err parseError ->
                             Err parseError
-                        Ok (Just (_, vector))
-                            | Data.Vector.null vector ->
-                                Ok Nothing
+                        Ok (Just (_, [])) ->
+                            Ok Nothing
                         Ok tuple ->
                             Ok tuple
+     in
+        Parser{parse}
+
+optionally :: forall e a. Parser e a -> Parser e (Maybe a)
+optionally (Parser parseA) =
+    let
+        parse :: ByteString -> ParseResult e (Maybe a)
+        parse source =
+            case parseA source of
+                Ok Nothing ->
+                    Ok $ Just (source, Nothing)
+                Ok (Just (rest, a)) ->
+                    Ok (Just (rest, Just a))
+                Err parseError ->
+                    Err parseError
      in
         Parser{parse}
