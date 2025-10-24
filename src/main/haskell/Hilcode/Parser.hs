@@ -6,9 +6,12 @@ import Data.ByteString.Char8 qualified
 import Data.List qualified
 import Data.Text (Text)
 import Data.Text qualified
+import Data.Tuple qualified
 import Data.Vector (Vector)
 import Data.Vector qualified
 import Hilcode.Result (Result (..))
+import System.OsPath (OsChar, OsString)
+import System.OsPath qualified
 import Prelude hiding (repeat)
 
 type ParseResult e a =
@@ -107,6 +110,22 @@ string text =
      in
         Parser{parse}
 
+osString :: forall e. OsString -> Parser e OsString
+osString text =
+    let
+        byteString :: ByteString
+        byteString = Data.ByteString.concat (Data.ByteString.Char8.singleton . System.OsPath.toChar <$> System.OsPath.unpack text)
+
+        parse :: ByteString -> ParseResult e OsString
+        parse source =
+            case Data.ByteString.stripPrefix byteString source of
+                Nothing ->
+                    Ok Nothing
+                Just rest ->
+                    Ok $ Just (rest, text)
+     in
+        Parser{parse}
+
 char :: forall e. Char -> Parser e Char
 char ch =
     let
@@ -120,6 +139,31 @@ char ch =
                     Ok Nothing
                 Just rest ->
                     Ok $ Just (rest, ch)
+     in
+        Parser{parse}
+
+osChar :: forall e. OsChar -> Parser e OsChar
+osChar ch =
+    let
+        byteString :: ByteString
+        byteString = (Data.ByteString.Char8.singleton . System.OsPath.toChar) ch
+
+        parse :: ByteString -> ParseResult e OsChar
+        parse source =
+            case Data.ByteString.stripPrefix byteString source of
+                Nothing ->
+                    Ok Nothing
+                Just rest ->
+                    Ok $ Just (rest, ch)
+     in
+        Parser{parse}
+
+anyChar :: forall e. Parser e Char
+anyChar =
+    let
+        parse :: ByteString -> ParseResult e Char
+        parse source =
+            Ok $ Data.Tuple.swap `fmap` Data.ByteString.Char8.uncons source
      in
         Parser{parse}
 
