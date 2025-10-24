@@ -24,7 +24,7 @@ import System.OsString qualified
 data GlobPart
     = AnyChars
     | AnySingleChar
-    | Verbatim OsString
+    | OsStringMatch OsString
     deriving stock (Eq, Ord, Show)
 
 data GlobPartFiber
@@ -34,7 +34,7 @@ data GlobPartFiber
 matchGlobPartFiber :: GlobPartFiber -> Either (Set GlobPartFiber) Bool
 matchGlobPartFiber (GlobPartFiber name []) =
     Right $ System.OsString.null name
-matchGlobPartFiber (GlobPartFiber name (Verbatim prefix : globParts)) =
+matchGlobPartFiber (GlobPartFiber name (OsStringMatch prefix : globParts)) =
     case System.OsString.stripPrefix prefix name of
         Nothing ->
             Right False
@@ -165,19 +165,54 @@ _match fileSystem directory glob =
 _mkGlob2 :: Text -> Result GlobError Glob
 _mkGlob2 text =
     let
+        parseGlobPart :: Parser GlobError GlobPart
+        parseGlobPart =
+            let
+                parseAnyChars :: Parser GlobError GlobPart
+                parseAnyChars = AnyChars <$ Hilcode.Parser.char '*'
+
+                parseAnySingleChar :: Parser GlobError GlobPart
+                parseAnySingleChar = AnySingleChar <$ Hilcode.Parser.char '?'
+
+                parseOsString :: Parser GlobError OsString
+                parseOsString = System.OsPath.pack <$> Hilcode.Parser.repeat Hilcode.Parser.anyOsChar
+
+                parseFileMatch :: Parser GlobError GlobPart
+                parseFileMatch = OsStringMatch <$> parseOsString
+             in
+                Hilcode.Parser.firstOf parseAnyChars $ Hilcode.Parser.firstOf parseAnySingleChar parseFileMatch
+
         parseDirGlob :: Parser GlobError DirGlob
-        parseDirGlob = undefined
+        parseDirGlob =
+            let
+                parseAnyDirs :: Parser GlobError DirGlob
+                parseAnyDirs = AnyDirs <$ (Hilcode.Parser.string "**" >> Hilcode.Parser.char '/')
+
+                parseAnySingleDir :: Parser GlobError DirGlob
+                parseAnySingleDir = AnySingleDir <$ (Hilcode.Parser.char '*' >> Hilcode.Parser.char '/')
+
+                parseDirMatch :: Parser GlobError DirGlob
+                parseDirMatch = DirMatch <$> (Hilcode.Parser.repeat parseGlobPart <* Hilcode.Parser.char '/')
+             in
+                Hilcode.Parser.firstOf parseAnyDirs $ Hilcode.Parser.firstOf parseAnySingleDir parseDirMatch
 
         parseFileGlob :: Parser GlobError FileGlob
-        parseFileGlob = undefined
+        parseFileGlob =
+            let
+                parseAnySingleFile :: Parser e FileGlob
+                parseAnySingleFile = AnySingleFile <$ (Hilcode.Parser.char '*' >> Hilcode.Parser.endOfInput)
+
+                parseFileMatch :: Parser GlobError FileGlob
+                parseFileMatch = FileMatch <$> Hilcode.Parser.repeat parseGlobPart
+             in
+                Hilcode.Parser.firstOf parseAnySingleFile parseFileMatch
 
         parseGlob :: Parser GlobError Glob
         parseGlob = do
             dirGlobs <- Hilcode.Parser.repeat parseDirGlob
             Glob dirGlobs <$> parseFileGlob
-
-        x2 :: Result GlobError Glob
-        x2 = case Hilcode.Parser.runParser parseGlob text of
+     in
+        case Hilcode.Parser.runParser parseGlob text of
             Ok (Just (rest, glob))
                 | Data.ByteString.null rest ->
                     Ok glob
@@ -187,8 +222,6 @@ _mkGlob2 text =
                 Err NoMatch
             Ok (Just (_, _)) ->
                 Err Incomplete
-     in
-        x2
 
 mkGlob :: String -> Result GlobError Glob
 mkGlob text =
@@ -250,8 +283,8 @@ fixGlob (Glob dirGlobs fileGlob) =
                     AnyChars : fixGlobParts more
                 AnySingleChar : more ->
                     AnySingleChar : fixGlobParts more
-                verbatim@(Verbatim _) : more ->
-                    verbatim : fixGlobParts more
+                osStringMatch@(OsStringMatch _) : more ->
+                    osStringMatch : fixGlobParts more
 
         fixDirGlobs :: [DirGlob] -> [DirGlob]
         fixDirGlobs dirGlobs =
@@ -338,7 +371,7 @@ mkGlobParts text =
                 _ ->
                     case notSpecial `span` osChars of
                         (lhs, rhs) ->
-                            Verbatim (System.OsPath.pack lhs) : toGlobParts rhs
+                            OsStringMatch (System.OsPath.pack lhs) : toGlobParts rhs
 
         globParts :: [GlobPart]
         globParts = toGlobParts $ System.OsPath.unpack text

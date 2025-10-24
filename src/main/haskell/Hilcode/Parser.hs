@@ -96,6 +96,17 @@ fail parseError =
      in
         Parser{parse}
 
+endOfInput :: forall e. Parser e ()
+endOfInput =
+    let
+        parse :: ByteString -> ParseResult e ()
+        parse source =
+            if Data.ByteString.null source
+                then Ok (Just (source, ()))
+                else Ok Nothing
+     in
+        Parser{parse}
+
 string :: forall e. Text -> Parser e Text
 string text =
     let
@@ -168,6 +179,10 @@ anyChar =
             Ok $ Data.Tuple.swap `fmap` Data.ByteString.Char8.uncons source
      in
         Parser{parse}
+
+anyOsChar :: forall e. Parser e OsChar
+anyOsChar =
+    System.OsPath.unsafeFromChar <$> anyChar
 
 firstOf :: forall e a. Parser e a -> Parser e a -> Parser e a
 firstOf (Parser lhs) (Parser rhs) =
