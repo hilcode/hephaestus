@@ -1,5 +1,6 @@
 module Hilcode.Glob (
     mkGlob,
+    mkGlob2,
     GlobError (..),
 ) where
 
@@ -186,9 +187,12 @@ _match fileSystem directory glob =
      in
         go (Data.Set.singleton fiber, Data.Vector.empty)
 
-_mkGlob2 :: OsString -> Result GlobError Glob
-_mkGlob2 text =
+mkGlob2 :: String -> Result GlobError Glob
+mkGlob2 originalText =
     let
+        text :: OsString
+        text = System.OsPath.unsafeEncodeUtf originalText
+
         star :: OsChar
         star = System.OsPath.unsafeFromChar '*'
 

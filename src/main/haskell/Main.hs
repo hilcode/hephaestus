@@ -17,5 +17,5 @@ main = do
     let fileSystem :: FileSystem.Handle IO = FileSystem.new
     currentDir :: AbsDir <- fileSystem.getCurrentDir
     logger.debug $ Data.Text.show currentDir
-    logger.info $ Data.Text.show $ Hilcode.Glob.mkGlob "**/*/**/**/**/*/*/?*?*?*.java"
+    logger.info $ Data.Text.show $ Hilcode.Glob.mkGlob2 "**/*/**/**/**/*/*/?*?*?*.java"
     logger.debug "Done"
