@@ -2,6 +2,9 @@ module Hilcode.Misc (
     lift,
 ) where
 
+import Control.Applicative (Applicative, pure, (<$>))
+import Control.Monad (Monad)
+
 lift ::
     (Monad monad, Applicative applicative) =>
     monad (a -> b) ->

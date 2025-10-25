@@ -4,7 +4,15 @@ import Data.List qualified
 import Hilcode.Result (Result (..))
 import System.OsPath (OsChar, OsString)
 import System.OsPath qualified
-import Prelude hiding (repeat)
+import Prelude (
+    Applicative (..),
+    Functor (..),
+    Maybe (..),
+    Monad (..),
+    ($),
+    (.),
+    (==),
+ )
 
 type Source = [OsChar]
 

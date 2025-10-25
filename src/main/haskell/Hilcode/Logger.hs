@@ -7,6 +7,14 @@ module Hilcode.Logger (
 import Data.Text (Text)
 import Data.Text.IO qualified
 import Hilcode.Clock qualified as Clock
+import Prelude (
+    Eq,
+    IO,
+    Ord (..),
+    pure,
+    ($),
+    (<>),
+ )
 
 data LogLevel
     = DEBUG

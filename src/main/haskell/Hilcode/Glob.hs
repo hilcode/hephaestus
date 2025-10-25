@@ -18,6 +18,32 @@ import System.IO qualified
 import System.OsPath (OsChar, OsPath, OsString)
 import System.OsPath qualified
 import System.OsString qualified
+import Prelude (
+    Bool (..),
+    Either (..),
+    Eq (..),
+    Maybe (..),
+    Monad (..),
+    Monoid (..),
+    Ord,
+    Show,
+    String,
+    const,
+    fmap,
+    mapM,
+    mconcat,
+    not,
+    pure,
+    span,
+    undefined,
+    ($),
+    (<$),
+    (<$>),
+    (<*),
+    (<*>),
+    (<>),
+    (||),
+ )
 
 data GlobPart
     = AnyChars

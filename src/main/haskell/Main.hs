@@ -7,6 +7,7 @@ import Hilcode.FileSystem qualified as FileSystem
 import Hilcode.Glob qualified
 import Hilcode.Logger (LogLevel (..))
 import Hilcode.Logger qualified as Logger
+import Prelude (IO, ($))
 
 main :: IO ()
 main = do

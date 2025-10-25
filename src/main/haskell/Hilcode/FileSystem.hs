@@ -16,6 +16,19 @@ import System.OsPath (
     OsPath,
     (</>),
  )
+import Prelude (
+    Bool,
+    Eq,
+    IO,
+    Ord,
+    Show,
+    fst,
+    print,
+    pure,
+    snd,
+    ($),
+    (<$>),
+ )
 
 data Handle monad = Handle
     { getCurrentDir :: monad AbsDir

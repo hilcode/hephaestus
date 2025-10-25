@@ -14,6 +14,22 @@ import Data.Time (
  )
 import Data.Time.Clock (getCurrentTime)
 import TextShow qualified
+import Prelude (
+    IO,
+    Integer,
+    div,
+    fmap,
+    fst,
+    pure,
+    realToFrac,
+    snd,
+    ($),
+    (*),
+    (+),
+    (-),
+    (<),
+    (<>),
+ )
 
 newtype Handle monad = Handle
     { getElapsedTime :: monad NominalDiffTime

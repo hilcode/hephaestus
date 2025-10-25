@@ -38,6 +38,7 @@ library
   default-extensions:
       FunctionalDependencies
       MultiWayIf
+      NoImplicitPrelude
       OverloadedRecordDot
       OverloadedStrings
       Strict
@@ -74,6 +75,7 @@ executable hephaestus
   default-extensions:
       FunctionalDependencies
       MultiWayIf
+      NoImplicitPrelude
       OverloadedRecordDot
       OverloadedStrings
       Strict
@@ -105,6 +107,7 @@ test-suite test
   default-extensions:
       FunctionalDependencies
       MultiWayIf
+      NoImplicitPrelude
       OverloadedRecordDot
       OverloadedStrings
       Strict
