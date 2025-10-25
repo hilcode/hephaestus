@@ -1,32 +1,28 @@
 module Hilcode.Parser where
 
-import Data.ByteString (ByteString)
-import Data.ByteString qualified
-import Data.ByteString.Char8 qualified
 import Data.List qualified
-import Data.Text (Text)
-import Data.Text qualified
-import Data.Tuple qualified
 import Hilcode.Result (Result (..))
 import System.OsPath (OsChar, OsString)
 import System.OsPath qualified
 import Prelude hiding (repeat)
 
+type Source = [OsChar]
+
 type ParseResult e a =
-    Result e (Maybe (ByteString, a))
+    Result e (Maybe (Source, a))
 
 newtype Parser e a
-    = Parser {parse :: ByteString -> ParseResult e a}
+    = Parser {parse :: Source -> ParseResult e a}
 
-runParser :: forall e a. Parser e a -> Text -> ParseResult e a
+runParser :: forall e a. Parser e a -> OsString -> ParseResult e a
 runParser (Parser parse) text =
-    parse $ Data.ByteString.concat $ Data.ByteString.Char8.singleton <$> Data.Text.unpack text
+    parse $ System.OsPath.unpack text
 
 instance Functor (Parser e) where
     fmap :: forall a b. (a -> b) -> Parser e a -> Parser e b
     fmap f (Parser parseA) =
         let
-            parse :: ByteString -> ParseResult e b
+            parse :: Source -> ParseResult e b
             parse source =
                 let
                     resultA :: ParseResult e a
@@ -43,7 +39,7 @@ instance Applicative (Parser e) where
     pure :: forall a. a -> Parser e a
     pure a =
         let
-            parse :: ByteString -> ParseResult e a
+            parse :: Source -> ParseResult e a
             parse source = Ok $ Just (source, a)
          in
             Parser{parse}
@@ -51,7 +47,7 @@ instance Applicative (Parser e) where
     liftA2 :: forall a b c. (a -> b -> c) -> Parser e a -> Parser e b -> Parser e c
     liftA2 f (Parser parseA) (Parser parseB) =
         let
-            parse :: ByteString -> ParseResult e c
+            parse :: Source -> ParseResult e c
             parse source =
                 case parseA source of
                     Ok (Just (sourceAfterA, a)) ->
@@ -73,7 +69,7 @@ instance Monad (Parser e) where
     (>>=) :: forall a b. Parser e a -> (a -> Parser e b) -> Parser e b
     (>>=) (Parser parseA) f =
         let
-            parse :: ByteString -> ParseResult e b
+            parse :: Source -> ParseResult e b
             parse source =
                 case parseA source of
                     Ok (Just (sourceAfterA, a)) ->
@@ -90,7 +86,7 @@ instance Monad (Parser e) where
 fail :: forall e a. e -> Parser e a
 fail parseError =
     let
-        parse :: ByteString -> ParseResult e a
+        parse :: Source -> ParseResult e a
         parse _ =
             Err parseError
      in
@@ -99,95 +95,63 @@ fail parseError =
 endOfInput :: forall e. Parser e ()
 endOfInput =
     let
-        parse :: ByteString -> ParseResult e ()
+        parse :: Source -> ParseResult e ()
         parse source =
-            if Data.ByteString.null source
-                then Ok (Just (source, ()))
-                else Ok Nothing
-     in
-        Parser{parse}
-
-string :: forall e. Text -> Parser e Text
-string text =
-    let
-        byteString :: ByteString
-        byteString = Data.ByteString.concat $ Data.ByteString.Char8.singleton <$> Data.Text.unpack text
-
-        parse :: ByteString -> ParseResult e Text
-        parse source =
-            case Data.ByteString.stripPrefix byteString source of
-                Nothing ->
+            case source of
+                [] ->
+                    Ok (Just (source, ()))
+                _ ->
                     Ok Nothing
-                Just rest ->
-                    Ok $ Just (rest, text)
      in
         Parser{parse}
 
 osString :: forall e. OsString -> Parser e OsString
-osString text =
+osString expected =
     let
-        byteString :: ByteString
-        byteString = Data.ByteString.concat (Data.ByteString.Char8.singleton . System.OsPath.toChar <$> System.OsPath.unpack text)
+        osString :: Source
+        osString = System.OsPath.unpack expected
 
-        parse :: ByteString -> ParseResult e OsString
+        parse :: Source -> ParseResult e OsString
         parse source =
-            case Data.ByteString.stripPrefix byteString source of
+            case Data.List.stripPrefix osString source of
                 Nothing ->
                     Ok Nothing
                 Just rest ->
-                    Ok $ Just (rest, text)
-     in
-        Parser{parse}
-
-char :: forall e. Char -> Parser e Char
-char ch =
-    let
-        byteString :: ByteString
-        byteString = Data.ByteString.Char8.singleton ch
-
-        parse :: ByteString -> ParseResult e Char
-        parse source =
-            case Data.ByteString.stripPrefix byteString source of
-                Nothing ->
-                    Ok Nothing
-                Just rest ->
-                    Ok $ Just (rest, ch)
+                    Ok $ Just (rest, expected)
      in
         Parser{parse}
 
 osChar :: forall e. OsChar -> Parser e OsChar
-osChar ch =
+osChar expected =
     let
-        byteString :: ByteString
-        byteString = (Data.ByteString.Char8.singleton . System.OsPath.toChar) ch
-
-        parse :: ByteString -> ParseResult e OsChar
+        parse :: Source -> ParseResult e OsChar
         parse source =
-            case Data.ByteString.stripPrefix byteString source of
-                Nothing ->
+            case source of
+                firstOsChar : rest
+                    | firstOsChar == expected ->
+                        Ok $ Just (rest, firstOsChar)
+                _ ->
                     Ok Nothing
-                Just rest ->
-                    Ok $ Just (rest, ch)
-     in
-        Parser{parse}
-
-anyChar :: forall e. Parser e Char
-anyChar =
-    let
-        parse :: ByteString -> ParseResult e Char
-        parse source =
-            Ok $ Data.Tuple.swap `fmap` Data.ByteString.Char8.uncons source
      in
         Parser{parse}
 
 anyOsChar :: forall e. Parser e OsChar
 anyOsChar =
-    System.OsPath.unsafeFromChar <$> anyChar
+    let
+        parse :: Source -> ParseResult e OsChar
+        parse source =
+            case source of
+                firstOsChar : rest ->
+                    Ok $ Just (rest, firstOsChar)
+                _ ->
+                    Ok Nothing
+     in
+        Parser{parse}
 
 firstOf :: forall e a. Parser e a -> Parser e a -> Parser e a
 firstOf (Parser lhs) (Parser rhs) =
     let
-        parse :: ByteString -> ParseResult e a
+        parse :: Source -> ParseResult e a
         parse source =
             case lhs source of
                 Ok Nothing ->
@@ -202,7 +166,7 @@ firstOf (Parser lhs) (Parser rhs) =
 repeat :: forall e a. Parser e a -> Parser e [a]
 repeat (Parser parseA) =
     let
-        go :: [a] -> ByteString -> ParseResult e [a]
+        go :: [a] -> Source -> ParseResult e [a]
         go accumulator source =
             case parseA source of
                 Ok Nothing ->
@@ -216,7 +180,7 @@ repeat (Parser parseA) =
                 Err parseError ->
                     Err parseError
 
-        parse :: ByteString -> ParseResult e [a]
+        parse :: Source -> ParseResult e [a]
         parse = go []
      in
         Parser{parse}
@@ -224,7 +188,7 @@ repeat (Parser parseA) =
 repeat1 :: forall e a. Parser e a -> Parser e [a]
 repeat1 parser =
     let
-        parse :: ByteString -> ParseResult e [a]
+        parse :: Source -> ParseResult e [a]
         parse source =
             case repeat parser of
                 Parser parse ->
@@ -241,7 +205,7 @@ repeat1 parser =
 optionally :: forall e a. Parser e a -> Parser e (Maybe a)
 optionally (Parser parseA) =
     let
-        parse :: ByteString -> ParseResult e (Maybe a)
+        parse :: Source -> ParseResult e (Maybe a)
         parse source =
             case parseA source of
                 Ok Nothing ->

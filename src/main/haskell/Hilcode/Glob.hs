@@ -3,11 +3,9 @@ module Hilcode.Glob (
     GlobError (..),
 ) where
 
-import Data.ByteString qualified
 import Data.List qualified
 import Data.Set (Set)
 import Data.Set qualified
-import Data.Text (Text)
 import Data.Vector (Vector)
 import Data.Vector qualified
 import Hilcode.FileSystem (RelDir (..), RelFile (..), (//))
@@ -162,17 +160,29 @@ _match fileSystem directory glob =
      in
         go (Data.Set.singleton fiber, Data.Vector.empty)
 
-_mkGlob2 :: Text -> Result GlobError Glob
+_mkGlob2 :: OsString -> Result GlobError Glob
 _mkGlob2 text =
     let
+        star :: OsChar
+        star = System.OsPath.unsafeFromChar '*'
+
+        questionMark :: OsChar
+        questionMark = System.OsPath.unsafeFromChar '?'
+
+        slash :: OsChar
+        slash = System.OsPath.unsafeFromChar '/'
+
+        starStar :: OsString
+        starStar = System.OsPath.pack [star, star]
+
         parseGlobPart :: Parser GlobError GlobPart
         parseGlobPart =
             let
                 parseAnyChars :: Parser GlobError GlobPart
-                parseAnyChars = AnyChars <$ Hilcode.Parser.char '*'
+                parseAnyChars = AnyChars <$ Hilcode.Parser.osChar star
 
                 parseAnySingleChar :: Parser GlobError GlobPart
-                parseAnySingleChar = AnySingleChar <$ Hilcode.Parser.char '?'
+                parseAnySingleChar = AnySingleChar <$ Hilcode.Parser.osChar questionMark
 
                 parseOsString :: Parser GlobError OsString
                 parseOsString = System.OsPath.pack <$> Hilcode.Parser.repeat Hilcode.Parser.anyOsChar
@@ -186,13 +196,13 @@ _mkGlob2 text =
         parseDirGlob =
             let
                 parseAnyDirs :: Parser GlobError DirGlob
-                parseAnyDirs = AnyDirs <$ (Hilcode.Parser.string "**" >> Hilcode.Parser.char '/')
+                parseAnyDirs = AnyDirs <$ (Hilcode.Parser.osString starStar >> Hilcode.Parser.osChar slash)
 
                 parseAnySingleDir :: Parser GlobError DirGlob
-                parseAnySingleDir = AnySingleDir <$ (Hilcode.Parser.char '*' >> Hilcode.Parser.char '/')
+                parseAnySingleDir = AnySingleDir <$ (Hilcode.Parser.osChar star >> Hilcode.Parser.osChar slash)
 
                 parseDirMatch :: Parser GlobError DirGlob
-                parseDirMatch = DirMatch <$> (Hilcode.Parser.repeat parseGlobPart <* Hilcode.Parser.char '/')
+                parseDirMatch = DirMatch <$> (Hilcode.Parser.repeat parseGlobPart <* Hilcode.Parser.osChar slash)
              in
                 Hilcode.Parser.firstOf parseAnyDirs $ Hilcode.Parser.firstOf parseAnySingleDir parseDirMatch
 
@@ -200,7 +210,7 @@ _mkGlob2 text =
         parseFileGlob =
             let
                 parseAnySingleFile :: Parser e FileGlob
-                parseAnySingleFile = AnySingleFile <$ (Hilcode.Parser.char '*' >> Hilcode.Parser.endOfInput)
+                parseAnySingleFile = AnySingleFile <$ (Hilcode.Parser.osChar star >> Hilcode.Parser.endOfInput)
 
                 parseFileMatch :: Parser GlobError FileGlob
                 parseFileMatch = FileMatch <$> Hilcode.Parser.repeat parseGlobPart
@@ -214,7 +224,7 @@ _mkGlob2 text =
      in
         case Hilcode.Parser.runParser parseGlob text of
             Ok (Just (rest, glob))
-                | Data.ByteString.null rest ->
+                | Data.List.null rest ->
                     Ok glob
             Err parseError ->
                 Err parseError
