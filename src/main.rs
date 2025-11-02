@@ -1,0 +1,8 @@
+#![cfg_attr(coverage_nightly, feature(coverage_attribute))]
+#![allow(non_camel_case_types)]
+#![allow(dead_code)]
+
+fn main()
+{
+	println!("Okay");
+}

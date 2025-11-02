@@ -1,0 +1,243 @@
+function log() {
+	local level="$1"
+	local message="$2"
+	printf '%23s | %-5s -- %s\n' "$(date '+%Y-%m-%d %H:%M:%S.%3N')" "$level" "$message"
+}
+
+function info() {
+	local message="$1"
+	log 'INFO' "$message"
+}
+
+function warn() {
+	local message="$1"
+	log 'WARN' "$message"
+}
+
+function error() {
+	local message="$1"
+	log 'ERROR' "$message"
+}
+
+function fatal() {
+	local message="$1"
+	log 'FATAL' "$message"
+}
+
+function die() {
+	local message="$1"
+	fatal "$message"
+	exit -1
+}
+
+function usage() {
+	local script_name=$(basename $0)
+	cat <<-EOF
+		Usage: $script_name [--help|-h]
+
+		Options:
+		    --help|-h
+		        Shows this message
+
+		    clean
+		        Run "cargo clean"
+
+		    format
+		        Run "cargo fmt"
+
+		    check
+		        Run "cargo check"
+
+		    lint
+		        Run "cargo clippy"
+
+		    test
+		        Run "cargo test"
+
+		    --coverage|-c
+		        Run "cargo tarpaulin" instead of "cargo test"
+
+		    build
+		        Run "cargo build"
+
+		    all
+		        Run all ("format", "check", "lint", "test", and "build")
+	EOF
+	exit 0
+}
+
+CLEAN='F'
+function clean {
+	info "Clean"
+	cargo clean || die 'Cleaning failed'
+	info "Clean done"
+}
+
+FORMAT='F'
+function format {
+	info "Format"
+	cargo-fmt || die 'Formatting failed'
+	info "Format done"
+}
+
+CHECK='F'
+function check {
+	info "Check"
+	RUSTFLAGS=-Awarnings cargo check || die 'Checking failed'
+	info "Check done"
+}
+
+LINT='F'
+function lint {
+	info "Lint"
+	cargo clippy || die 'Linting failed'
+	info "Lint done"
+}
+
+TEST='F'
+COVERAGE='F'
+MIN_FUNCTION_COVERAGE_PERCENTAGE=0
+MIN_LINE_COVERAGE_PERCENTAGE=0
+MIN_REGION_COVERAGE_PERCENTAGE=0
+function init {
+	if [ -f .percentages ]; then
+		local percentages=$(echo $(cat .percentages))
+		MIN_FUNCTION_COVERAGE_PERCENTAGE=$(echo ${percentages%%|*})
+		percentages=${percentages#*|}
+		MIN_LINE_COVERAGE_PERCENTAGE=$(echo ${percentages%%|*})
+		percentages=${percentages#*|}
+		MIN_REGION_COVERAGE_PERCENTAGE=$(echo ${percentages%%|*})
+	fi
+}
+
+DIRTY='F'
+INDICATION=""
+function compare_percentages {
+	local actual=$1
+	local expected=$2
+	local name=$3
+	if (( $(echo "$actual < $expected" | bc -l) )); then
+		echo "Not enough $name coverage ($actual < $expected)!"
+		exit -1
+	elif (( $(echo "$actual > $expected" | bc -l) )); then
+		DIRTY='T'
+		INDICATION='(!)'
+	else
+		INDICATION=""
+	fi
+}
+
+COVERAGE_RESULT=' '
+function check_coverage {
+	local result=$COVERAGE_RESULT
+	result="${result#Totals }"
+	local function_coverage="$(echo ${result%%% (*})"
+	compare_percentages "$function_coverage" "$MIN_FUNCTION_COVERAGE_PERCENTAGE" 'function'
+	local function_indication="$INDICATION"
+	result=${result#*) }
+	local line_coverage="$(echo ${result%%% (*})"
+	compare_percentages "$line_coverage" "$MIN_LINE_COVERAGE_PERCENTAGE" 'line'
+	local line_indication="$INDICATION"
+	result=${result#*) }
+	local region_coverage="$(echo ${result%%% (*})"
+	compare_percentages "$region_coverage" "$MIN_REGION_COVERAGE_PERCENTAGE" 'region'
+	local region_indication="$INDICATION"
+	if [ $DIRTY == 'T' ]; then
+		echo "$function_coverage|$line_coverage|$region_coverage" >.percentages
+	fi
+	echo ""
+	echo "    Coverage:"
+	echo "        Function: $function_coverage${function_indication}; Line: $line_coverage${line_indication}; Region: $region_coverage${region_indication}"
+	echo ""
+}
+
+function test {
+	info "Test"
+	if [  == 'F' ]; then
+		cargo test || die 'Testing failed'
+	else
+		cargo llvm-cov --html || die 'Testing failed'
+		init
+		COVERAGE_RESULT=$(xidel target/llvm-cov/html/index.html -e '//tr[last()]')
+		check_coverage
+	fi
+	info "Test done"
+}
+
+BUILD='F'
+function build {
+	info "Build"
+	cargo build || die 'Building failed'
+	info "Build done"
+}
+
+function main() {
+	while [ $# -gt 0 ]; do
+		case $1 in
+			--help|-h)
+				usage
+				;;
+
+			clean)
+				CLEAN='T'
+				;;
+
+			format)
+				FORMAT='T'
+				;;
+
+			check)
+				CHECK='T'
+				;;
+
+			lint)
+				LINT='T'
+				;;
+
+			test)
+				TEST='T'
+				;;
+
+			--coverage|-c)
+				COVERAGE='T'
+				;;
+
+			build)
+				BUILD='T'
+				;;
+
+			all)
+				FORMAT='T'
+				CHECK='T'
+				LINT='T'
+				TEST='T'
+				BUILD='T'
+				;;
+
+			*)
+				die "Unknown option: '$1'; aborting..."
+				;;
+		esac
+		shift
+	done
+	if [ $CLEAN == 'T' ]; then
+		clean
+	fi
+	if [ $FORMAT == 'T' ]; then
+		format
+	fi
+	if [ $CHECK == 'T' ]; then
+		check
+	fi
+	if [ $LINT == 'T' ]; then
+		lint
+	fi
+	if [ $TEST == 'T' ]; then
+		test
+	fi
+	if [ $BUILD == 'T' ]; then
+		build
+	fi
+}
+
+main "$@"

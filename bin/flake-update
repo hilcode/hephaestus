@@ -1,0 +1,35 @@
+LATEST_NIXOS_VERSION=""
+function set_latest_nixos_version() {
+	printf 'Retrieving latest NixOS version .. '
+	LATEST_NIXOS_VERSION=$(
+		wget -O - -q https://nixos.org/download/ |
+			grep latest-nixos-minimal-x86_64-linux.iso |
+			sed -e 's#^.*"https://channels.nixos.org/nixos-\([^/]\+\)/latest-nixos-minimal-x86_64-linux.iso".*$#\1#'
+	)
+	printf '%s\n' ${LATEST_NIXOS_VERSION}
+}
+
+OUR_NIXOS_VERSION=""
+GITHUB='github:NixOS/nixpkgs/'
+function set_our_nixos_version() {
+	printf 'Getting our NixOS version       .. '
+	OUR_NIXOS_VERSION=$(
+		grep '"'$GITHUB'nixos-[^"]*"' flake.nix |
+			sed 's#^[^"]*"'$GITHUB'nixos-\([^"]*\)";$#\1#'
+	)
+	printf '%s\n' ${OUR_NIXOS_VERSION}
+}
+
+function main() {
+	set_latest_nixos_version
+	set_our_nixos_version
+	if [ "${OUR_NIXOS_VERSION}" == "${LATEST_NIXOS_VERSION}" ]; then
+		echo 'NixOS version is up-to-date'
+	else
+		sed -i -e "s/${OUR_NIXOS_VERSION}/${LATEST_NIXOS_VERSION}/" flake.nix
+		echo 'Updated NixOS version in flake.nix'
+	fi
+	nix flake update
+}
+
+main "$@"
