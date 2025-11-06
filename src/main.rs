@@ -25,7 +25,7 @@ fn main()
 	let base_directory: PathBuf = Path::new("../teng").to_path_buf();
 	let file_set_glob: FileSetGlob =
 		FileSetGlob::new(&base_directory, vec!["**/*.rs".into(), "!.git/**".into(), "!target/**".into()]);
-	let files: FileSet = file_set_glob.search().unwrap();
+	let files: FileSet = file_set_glob.search("rust-sources").unwrap();
 	println!("{:?}", &files);
 	println!("Okay");
 }

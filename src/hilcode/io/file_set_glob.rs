@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::path::PathBuf;
 
 use globwalker::DirEntry;
@@ -18,15 +17,19 @@ pub struct FileSetGlob
 impl FileSetGlob
 {
 	pub fn new(
-		base_directory: &Path,
-		globs: Vec<String>,
+		base_directory: impl Into<PathBuf>,
+		globs: impl Into<Vec<String>>,
 	) -> FileSetGlob
 	{
-		let base_directory: PathBuf = base_directory.to_path_buf();
+		let base_directory: PathBuf = base_directory.into();
+		let globs: Vec<String> = globs.into();
 		FileSetGlob { base_directory, globs }
 	}
 
-	pub fn search(&self) -> Result<FileSet, HepheastusError>
+	pub fn search(
+		&self,
+		name: impl Into<String>,
+	) -> Result<FileSet, HepheastusError>
 	{
 		let globe_walker: GlobWalker = GlobWalkerBuilder::from_patterns(&self.base_directory, &self.globs).build()?;
 		globe_walker
@@ -36,6 +39,6 @@ impl FileSetGlob
 			})
 			.collect::<Result<Vec<PathBuf>, WalkError>>()
 			.map_err(HepheastusError::DirectoryWalkerError)
-			.map(FileSet::new)
+			.map(|files: Vec<PathBuf>| -> FileSet { FileSet::new(name, files) })
 	}
 }
