@@ -18,4 +18,9 @@ impl FileSet
 		let files: Vec<PathBuf> = files.into();
 		FileSet { name, files }
 	}
+
+	pub fn iter(&self) -> impl Iterator<Item = &PathBuf>
+	{
+		self.files.iter()
+	}
 }

@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::path::PathBuf;
 
 use globwalker::DirEntry;
@@ -31,7 +32,9 @@ impl FileSetGlob
 		name: impl Into<String>,
 	) -> Result<FileSet, HepheastusError>
 	{
-		let globe_walker: GlobWalker = GlobWalkerBuilder::from_patterns(&self.base_directory, &self.globs).build()?;
+		let globe_walker: GlobWalker = GlobWalkerBuilder::from_patterns(&self.base_directory, &self.globs)
+			.sort_by(FileSetGlob::cmp)
+			.build()?;
 		globe_walker
 			.into_iter()
 			.map(|dir_entry: Result<DirEntry, WalkError>| -> Result<PathBuf, WalkError> {
@@ -40,5 +43,13 @@ impl FileSetGlob
 			.collect::<Result<Vec<PathBuf>, WalkError>>()
 			.map_err(HepheastusError::DirectoryWalkerError)
 			.map(|files: Vec<PathBuf>| -> FileSet { FileSet::new(name, files) })
+	}
+
+	fn cmp(
+		lhs: &DirEntry,
+		rhs: &DirEntry,
+	) -> Ordering
+	{
+		lhs.path().cmp(rhs.path())
 	}
 }
