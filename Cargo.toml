@@ -5,6 +5,12 @@ edition = "2024"
 description = "hephaestus"
 
 [dependencies]
+clap          = { version = "4.5.48",  features = [ "derive" ]                               }
+colored       = { version = "3.0.0"                                                          }
+const_format  = { version = "0.2.34"                                                         }
+globwalker    = { version = "0.9.0"                                                          }
+tempfile      = { version = "3.23.0"                                                         }
+time          = { version = "0.3.44",  features = [ "formatting", "local-offset", "macros" ] }
 
 [lints.rust]
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage_nightly)'] }
