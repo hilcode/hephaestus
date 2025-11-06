@@ -4,6 +4,7 @@
 
 mod hilcode;
 
+use std::path::Path;
 use std::path::PathBuf;
 use std::rc::Rc;
 
@@ -21,8 +22,9 @@ fn main()
 	let root_directory: PathBuf = PathBuf::new().join(".");
 	let app_config: Rc<AppConfig> = AppConfig::new(&root_directory, &cli);
 	println!("{:?}", app_config);
+	let base_directory: PathBuf = Path::new("../teng").to_path_buf();
 	let file_set_glob: FileSetGlob =
-		FileSetGlob::new("../teng".into(), vec!["**/*.rs".into(), "!.git/**".into(), "!target/**".into()]);
+		FileSetGlob::new(&base_directory, vec!["**/*.rs".into(), "!.git/**".into(), "!target/**".into()]);
 	let files: FileSet = file_set_glob.search().unwrap();
 	println!("{:?}", &files);
 	println!("Okay");

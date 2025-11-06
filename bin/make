@@ -153,7 +153,7 @@ function check_coverage {
 
 function test {
 	info "Test"
-	if [  == 'F' ]; then
+	if [ $COVERAGE == 'F' ]; then
 		cargo test || die 'Testing failed'
 	else
 		cargo llvm-cov --html || die 'Testing failed'
