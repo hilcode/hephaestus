@@ -26,10 +26,9 @@ fn main()
 	let file_set_glob: FileSetGlob =
 		FileSetGlob::new(&base_directory, vec!["**/*.rs".into(), "!.git/**".into(), "!target/**".into()]);
 	let files: FileSet = file_set_glob.search("rust-sources").unwrap();
-	for file in files.iter()
+	for (index, file) in files.iter().enumerate()
 	{
-		println!("{:?}", &file);
+		println!("{}: {:?}", index, file);
 	}
-	// println!("{:?}", &files);
 	println!("Okay");
 }
