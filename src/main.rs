@@ -34,9 +34,7 @@ fn main()
 	{
 		let metadata: Metadata = path_buf.metadata().unwrap();
 		let file: File = File::open(path_buf).unwrap();
-		let mut buf_reader = BufReader::new(file);
-		// let mmap: Mmap = unsafe { Mmap::map(&file).unwrap() };
-		// let hash: u64 = xxh3_64(&mmap);
+		let mut buf_reader: BufReader<File> = BufReader::new(file);
 		let mut hasher: Xxh3 = Xxh3::new();
 		std::io::copy(&mut buf_reader, &mut hasher).unwrap();
 		let hash: u64 = hasher.digest();
