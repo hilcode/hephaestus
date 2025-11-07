@@ -6,13 +6,13 @@ mod hilcode;
 
 use std::fs::File;
 use std::fs::Metadata;
+use std::io::BufReader;
 use std::path::Path;
 use std::path::PathBuf;
 use std::rc::Rc;
 
 use clap::Parser;
-use memmap3::Mmap;
-use xxhash_rust::xxh3::xxh3_64;
+use xxhash_rust::xxh3::Xxh3;
 
 use crate::hilcode::config::app_config::AppConfig;
 use crate::hilcode::config::cli::Cli;
@@ -30,13 +30,17 @@ fn main()
 	let file_set_glob: FileSetGlob =
 		FileSetGlob::new(&base_directory, vec!["**/*.rs".into(), "!.git/**".into(), "!target/**".into()]);
 	let files: FileSet = file_set_glob.search("rust-sources").unwrap();
-	for (index, file) in files.iter().enumerate()
+	for (index, path_buf) in files.iter().enumerate()
 	{
-		let metadata: Metadata = file.metadata().unwrap();
-		let file: File = File::open(file).unwrap();
-		let mmap: Mmap = unsafe { Mmap::map(&file).unwrap() };
-		let hash: u64 = xxh3_64(&mmap);
-		println!("{}: {:?} / {:?} / {:?}", index, file, &metadata, hash);
+		let metadata: Metadata = path_buf.metadata().unwrap();
+		let file: File = File::open(path_buf).unwrap();
+		let mut buf_reader = BufReader::new(file);
+		// let mmap: Mmap = unsafe { Mmap::map(&file).unwrap() };
+		// let hash: u64 = xxh3_64(&mmap);
+		let mut hasher: Xxh3 = Xxh3::new();
+		std::io::copy(&mut buf_reader, &mut hasher).unwrap();
+		let hash: u64 = hasher.digest();
+		println!("{}: {:?} / {:?} / {:?}", index, path_buf, &metadata, hash);
 	}
 	println!("Okay");
 }
