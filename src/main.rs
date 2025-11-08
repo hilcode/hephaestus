@@ -72,7 +72,7 @@ impl FileStat
 		let modified: SystemTime = metadata.modified()?;
 		let file_size: FileSize = FileSize(metadata.size());
 		let file_mode: FileMode = FileMode(metadata.mode());
-		let hash: Hash = FileStat::get_hash(&path_buf)?;
+		let hash: Hash = FileStat::get_hash(path_buf)?;
 		Result::Ok(FileStat {
 			modified,
 			file_size,
