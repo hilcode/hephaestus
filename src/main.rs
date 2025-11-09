@@ -5,6 +5,7 @@
 mod hilcode;
 
 use std::fmt::Debug;
+use std::fmt::Display;
 use std::fs::File;
 use std::fs::Metadata;
 use std::io::BufReader;
@@ -43,9 +44,10 @@ fn main()
 	println!("Okay");
 }
 
+#[derive(Debug)]
 pub struct Hash(u64);
 
-impl Debug for Hash
+impl Display for Hash
 {
 	fn fmt(
 		&self,
@@ -56,9 +58,10 @@ impl Debug for Hash
 	}
 }
 
+#[derive(Debug)]
 pub struct FileSize(u64);
 
-impl Debug for FileSize
+impl Display for FileSize
 {
 	fn fmt(
 		&self,
@@ -69,9 +72,10 @@ impl Debug for FileSize
 	}
 }
 
+#[derive(Debug)]
 pub struct FileMode(u32);
 
-impl Debug for FileMode
+impl Display for FileMode
 {
 	fn fmt(
 		&self,
@@ -79,15 +83,15 @@ impl Debug for FileMode
 	) -> std::fmt::Result
 	{
 		let permissions: [u8; 9] = [
-			if self.0 & 0o100 == 0 { b'-' } else { b'r' },
-			if self.0 & 0o010 == 0 { b'-' } else { b'w' },
+			if self.0 & 0o400 == 0 { b'-' } else { b'r' },
+			if self.0 & 0o200 == 0 { b'-' } else { b'w' },
+			if self.0 & 0o100 == 0 { b'-' } else { b'x' },
+			if self.0 & 0o040 == 0 { b'-' } else { b'r' },
+			if self.0 & 0o020 == 0 { b'-' } else { b'w' },
+			if self.0 & 0o010 == 0 { b'-' } else { b'x' },
+			if self.0 & 0o004 == 0 { b'-' } else { b'r' },
+			if self.0 & 0o002 == 0 { b'-' } else { b'w' },
 			if self.0 & 0o001 == 0 { b'-' } else { b'x' },
-			if self.0 & 0o000100 == 0 { b'-' } else { b'r' },
-			if self.0 & 0o000010 == 0 { b'-' } else { b'w' },
-			if self.0 & 0o000001 == 0 { b'-' } else { b'x' },
-			if self.0 & 0o000000100 == 0 { b'-' } else { b'r' },
-			if self.0 & 0o000000010 == 0 { b'-' } else { b'w' },
-			if self.0 & 0o000000001 == 0 { b'-' } else { b'x' },
 		];
 		let permissions: &str = unsafe { std::str::from_utf8_unchecked(&permissions) };
 		formatter.write_fmt(format_args!("{}", permissions))
@@ -101,6 +105,20 @@ pub struct FileStat
 	file_size: FileSize,
 	file_mode: FileMode,
 	hash: Hash,
+}
+
+impl Display for FileStat
+{
+	fn fmt(
+		&self,
+		formatter: &mut std::fmt::Formatter<'_>,
+	) -> std::fmt::Result
+	{
+		formatter.write_fmt(format_args!(
+			"FileStat {{ modified: {:?}, file_size: {}, file_mode: {}, hash: {}}}",
+			&self.modified, &self.file_size, &self.file_mode, &self.hash
+		))
+	}
 }
 
 impl FileStat
