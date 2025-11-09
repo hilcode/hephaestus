@@ -4,6 +4,7 @@
 
 mod hilcode;
 
+use std::fmt::Debug;
 use std::fs::File;
 use std::fs::Metadata;
 use std::io::BufReader;
@@ -36,26 +37,64 @@ fn main()
 	let files: FileSet = file_set_glob.search("rust-sources").unwrap();
 	for (index, path_buf) in files.iter().enumerate()
 	{
-		let metadata: Metadata = path_buf.metadata().unwrap();
-		let modified: SystemTime = metadata.modified().unwrap();
-		let file_size: u64 = metadata.size();
-		let file_mode: u32 = metadata.mode();
-		let file: File = File::open(path_buf).unwrap();
-		let mut buf_reader: BufReader<File> = BufReader::new(file);
-		let mut hasher: Xxh3 = Xxh3::new();
-		std::io::copy(&mut buf_reader, &mut hasher).unwrap();
-		let hash: u64 = hasher.digest();
-		println!("{}: {:?} / {:?} {:#o} {:?} / {:?}", index, path_buf, &modified, file_mode, file_size, hash);
+		let file_stat: Result<FileStat, HepheastusError> = FileStat::get(path_buf);
+		println!("{}: {:?} / {:?}", index, path_buf, &file_stat);
 	}
 	println!("Okay");
 }
 
 pub struct Hash(u64);
 
+impl Debug for Hash
+{
+	fn fmt(
+		&self,
+		formatter: &mut std::fmt::Formatter<'_>,
+	) -> std::fmt::Result
+	{
+		formatter.write_fmt(format_args!("{:17x}", self.0))
+	}
+}
+
 pub struct FileSize(u64);
+
+impl Debug for FileSize
+{
+	fn fmt(
+		&self,
+		formatter: &mut std::fmt::Formatter<'_>,
+	) -> std::fmt::Result
+	{
+		formatter.write_fmt(format_args!("{}B", self.0))
+	}
+}
 
 pub struct FileMode(u32);
 
+impl Debug for FileMode
+{
+	fn fmt(
+		&self,
+		formatter: &mut std::fmt::Formatter<'_>,
+	) -> std::fmt::Result
+	{
+		let permissions: [u8; 9] = [
+			if self.0 & 0o100 == 0 { b'-' } else { b'r' },
+			if self.0 & 0o010 == 0 { b'-' } else { b'w' },
+			if self.0 & 0o001 == 0 { b'-' } else { b'x' },
+			if self.0 & 0o000100 == 0 { b'-' } else { b'r' },
+			if self.0 & 0o000010 == 0 { b'-' } else { b'w' },
+			if self.0 & 0o000001 == 0 { b'-' } else { b'x' },
+			if self.0 & 0o000000100 == 0 { b'-' } else { b'r' },
+			if self.0 & 0o000000010 == 0 { b'-' } else { b'w' },
+			if self.0 & 0o000000001 == 0 { b'-' } else { b'x' },
+		];
+		let permissions: &str = unsafe { std::str::from_utf8_unchecked(&permissions) };
+		formatter.write_fmt(format_args!("{}", permissions))
+	}
+}
+
+#[derive(Debug)]
 pub struct FileStat
 {
 	modified: SystemTime,
