@@ -39,7 +39,9 @@ fn main()
 	for (index, path_buf) in files.iter().enumerate()
 	{
 		let file_stat: Result<FileStat, HepheastusError> = FileStat::get(path_buf);
-		println!("{}: {:?} / {:?}", index, path_buf, &file_stat);
+		file_stat
+			.iter()
+			.for_each(|file_stat| println!("{}: {:?} / {}", index, path_buf, &file_stat));
 	}
 	println!("Okay");
 }
