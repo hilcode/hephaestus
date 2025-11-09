@@ -73,12 +73,13 @@ impl FileStat
 		let file_size: FileSize = FileSize(metadata.size());
 		let file_mode: FileMode = FileMode(metadata.mode());
 		let hash: Hash = FileStat::get_hash(path_buf)?;
-		Result::Ok(FileStat {
+		let file_stat: FileStat = FileStat {
 			modified,
 			file_size,
 			file_mode,
 			hash,
-		})
+		};
+		Result::Ok(file_stat)
 	}
 
 	fn get_hash(path_buf: &PathBuf) -> Result<Hash, Error>
