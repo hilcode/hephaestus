@@ -17,6 +17,8 @@ use std::rc::Rc;
 use std::time::SystemTime;
 
 use clap::Parser;
+use time::OffsetDateTime;
+use time::macros::format_description;
 use xxhash_rust::xxh3::Xxh3;
 
 use crate::hilcode::config::app_config::AppConfig;
@@ -41,7 +43,7 @@ fn main()
 		let file_stat: Result<FileStat, HepheastusError> = FileStat::get(path_buf);
 		file_stat
 			.iter()
-			.for_each(|file_stat| println!("{}: {:?} / {}", index, path_buf, &file_stat));
+			.for_each(|file_stat: &FileStat| println!("{}: {:?} / {}", index, path_buf, &file_stat));
 	}
 	println!("Okay");
 }
@@ -56,7 +58,7 @@ impl Display for Hash
 		formatter: &mut std::fmt::Formatter<'_>,
 	) -> std::fmt::Result
 	{
-		formatter.write_fmt(format_args!("{:17x}", self.0))
+		formatter.write_fmt(format_args!("{:16x}", self.0))
 	}
 }
 
@@ -116,10 +118,10 @@ impl Display for FileStat
 		formatter: &mut std::fmt::Formatter<'_>,
 	) -> std::fmt::Result
 	{
-		formatter.write_fmt(format_args!(
-			"FileStat {{ modified: {:?}, file_size: {}, file_mode: {}, hash: {}}}",
-			&self.modified, &self.file_size, &self.file_mode, &self.hash
-		))
+		let modified: OffsetDateTime = self.modified.into();
+		let format = format_description!("[year]-[month]-[day]T[hour]:[minute]:[second].[subsecond digits:3]");
+		let modified = modified.format(format).unwrap();
+		formatter.write_fmt(format_args!("{}|{}|{}|{}", &modified, &self.file_size, &self.file_mode, &self.hash))
 	}
 }
 
